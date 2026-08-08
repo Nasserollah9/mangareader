@@ -28,8 +28,11 @@ class MangaPanelDetector {
       const imgData = ctx.getImageData(0, 0, w, h);
       const data = imgData.data;
 
-      // Calculate row average brightness (Horizontal Projection Profile)
+      // Compute page brightness statistics for Adaptive Dynamic Thresholding
       const rowBrightness = new Float32Array(h);
+      let maxRowBrightness = 0;
+      let minRowBrightness = 255;
+
       for (let y = 0; y < h; y++) {
         let sum = 0;
         const rowOffset = y * w * 4;
@@ -37,11 +40,14 @@ class MangaPanelDetector {
           const idx = rowOffset + x * 4;
           sum += (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
         }
-        rowBrightness[y] = sum / w;
+        const avg = sum / w;
+        rowBrightness[y] = avg;
+        if (avg > maxRowBrightness) maxRowBrightness = avg;
+        if (avg < minRowBrightness) minRowBrightness = avg;
       }
 
-      // White gutter threshold for panel row separation
-      const whiteThreshold = 220;
+      // Adaptive horizontal row gutter threshold (accounts for dark drawings and scans)
+      const rowGutterThresh = Math.max(185, maxRowBrightness - (maxRowBrightness - minRowBrightness) * 0.20);
 
       // Identify Horizontal Panel Rows / Bands
       const panelYRanges = [];
@@ -49,28 +55,30 @@ class MangaPanelDetector {
       let startY = 0;
 
       for (let y = 0; y < h; y++) {
-        const isWhiteRow = rowBrightness[y] >= whiteThreshold;
+        const isWhiteRow = rowBrightness[y] >= rowGutterThresh;
         if (!inPanelRow && !isWhiteRow) {
           inPanelRow = true;
           startY = y;
         } else if (inPanelRow && isWhiteRow) {
-          if (y - startY > h * 0.07) { // Panel height threshold
-            panelYRanges.append ? panelYRanges.append([startY, y]) : panelYRanges.push([startY, y]);
+          if (y - startY > h * 0.06) {
+            panelYRanges.push([startY, y]);
           }
           inPanelRow = false;
         }
       }
 
-      if (inPanelRow && h - startY > h * 0.07) {
+      if (inPanelRow && h - startY > h * 0.06) {
         panelYRanges.push([startY, h]);
       }
 
       const detectedBoxes = [];
 
-      // For each horizontal row band, calculate Vertical Projection Profile
+      // For each horizontal row band, calculate Adaptive Vertical Projection Profile
       for (let [ys, ye] of panelYRanges) {
         const bandH = ye - ys;
         const colBrightness = new Float32Array(w);
+        let maxCol = 0;
+        let minCol = 255;
 
         for (let x = 0; x < w; x++) {
           let sum = 0;
@@ -78,19 +86,24 @@ class MangaPanelDetector {
             const idx = (y * w + x) * 4;
             sum += (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
           }
-          colBrightness[x] = sum / bandH;
+          const avg = sum / bandH;
+          colBrightness[x] = avg;
+          if (avg > maxCol) maxCol = avg;
+          if (avg < minCol) minCol = avg;
         }
+
+        const colGutterThresh = Math.max(185, maxCol - (maxCol - minCol) * 0.20);
 
         let inColPanel = false;
         let startX = 0;
 
         for (let x = 0; x < w; x++) {
-          const isWhiteCol = colBrightness[x] >= whiteThreshold;
+          const isWhiteCol = colBrightness[x] >= colGutterThresh;
           if (!inColPanel && !isWhiteCol) {
             inColPanel = true;
             startX = x;
           } else if (inColPanel && isWhiteCol) {
-            if (x - startX > w * 0.10) {
+            if (x - startX > w * 0.08) {
               detectedBoxes.push({
                 x: Math.max(0, (startX - 4) / w),
                 y: Math.max(0, (ys - 4) / h),
@@ -102,7 +115,7 @@ class MangaPanelDetector {
           }
         }
 
-        if (inColPanel && w - startX > w * 0.10) {
+        if (inColPanel && w - startX > w * 0.08) {
           detectedBoxes.push({
             x: Math.max(0, (startX - 4) / w),
             y: Math.max(0, (ys - 4) / h),
@@ -124,8 +137,8 @@ class MangaPanelDetector {
           if (usedIndexes.has(j)) continue;
           const other = detectedBoxes[j];
 
-          const sameColumn = Math.abs(box.x - other.x) < 0.06 && Math.abs(box.w - other.w) < 0.06;
-          const verticallyAdjacent = Math.abs((box.y + box.h) - other.y) < 0.08 || Math.abs((other.y + other.h) - box.y) < 0.08;
+          const sameColumn = Math.abs(box.x - other.x) < 0.08 && Math.abs(box.w - other.w) < 0.08;
+          const verticallyAdjacent = Math.abs((box.y + box.h) - other.y) < 0.10 || Math.abs((other.y + other.h) - box.y) < 0.10;
 
           if (sameColumn && verticallyAdjacent) {
             const minY = Math.min(box.y, other.y);
