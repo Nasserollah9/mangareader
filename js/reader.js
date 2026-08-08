@@ -173,9 +173,9 @@ class ImmersiveReader {
       const targetX = mesh.position.x - meshW / 2 + (targetPanel.bounds.x + targetPanel.bounds.w / 2) * meshW;
       const targetY = mesh.position.y + meshH / 2 - (targetPanel.bounds.y + targetPanel.bounds.h / 2) * meshH;
 
-      // Zoom out to fit 100% of full panel width & height on screen with clean comfortable margin
-      const zoomHeight = (1 / Math.max(0.08, targetPanel.bounds.h)) * 0.88;
-      const zoomWidth = (screenAspect / (Math.max(0.08, targetPanel.bounds.w) * pageAspect)) * 0.88;
+      // Generous zoom out (0.70 factor = 30% margin) to reveal full panel frame completely
+      const zoomHeight = (1 / Math.max(0.08, targetPanel.bounds.h)) * 0.70;
+      const zoomWidth = (screenAspect / (Math.max(0.08, targetPanel.bounds.w) * pageAspect)) * 0.70;
 
       // Target zoom guarantees the entire panel fits on screen completely without over-zooming
       const targetZoom = Math.min(zoomHeight, zoomWidth);
@@ -193,21 +193,12 @@ class ImmersiveReader {
         ease: "power2.out"
       });
 
-      // Subtle Entry Zoom Settling Effect (Cinematic Ease-In)
-      const entryZoom = targetZoom * 1.04;
+      // Smooth camera zoom out directly to targetZoom
       gsap.to(this.camera, {
-        zoom: entryZoom,
-        duration: duration * 0.6,
+        zoom: targetZoom,
+        duration: duration,
         ease: "power2.out",
-        onUpdate: () => this.camera.updateProjectionMatrix(),
-        onComplete: () => {
-          gsap.to(this.camera, {
-            zoom: targetZoom,
-            duration: duration * 0.4,
-            ease: "power1.inOut",
-            onUpdate: () => this.camera.updateProjectionMatrix()
-          });
-        }
+        onUpdate: () => this.camera.updateProjectionMatrix()
       });
 
       // Update UI Progress & Panel Counter Badge
