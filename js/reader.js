@@ -147,7 +147,10 @@ class ImmersiveReader {
     const page = this.pages.find(p => p.index === panel.pageIndex);
     const mesh = this.pageMeshes.get(panel.pageIndex);
 
-    if (!mesh || !page) return;
+    // Hide neighboring pages so zero adjacent page artwork peeks out in margins!
+    for (let [pIndex, m] of this.pageMeshes.entries()) {
+      m.visible = (pIndex === panel.pageIndex);
+    }
 
     // Calculate target camera position and precise orthographic zoom bounds
     const pageAspect = page.width / page.height;
@@ -159,13 +162,14 @@ class ImmersiveReader {
     const targetX = mesh.position.x - meshW / 2 + (panel.bounds.x + panel.bounds.w / 2) * meshW;
     const targetY = mesh.position.y + meshH / 2 - (panel.bounds.y + panel.bounds.h / 2) * meshH;
 
-    // Generous 25% margin padding so text bubbles & top page titles are NEVER cut off
-    const padding = 0.75;
+    // Smart margin padding (95% fill for large panels, 85% for normal panels)
+    const isLargePanel = (panel.bounds.w > 0.65 || panel.bounds.h > 0.65);
+    const padding = isLargePanel ? 0.95 : 0.85;
     const fitH = (1 / Math.max(0.08, panel.bounds.h)) * padding;
     const fitW = (screenAspect / (Math.max(0.08, panel.bounds.w) * pageAspect)) * padding;
 
-    // Cap max zoom to 1.65 so even small panels never over-zoom or cut off text bubbles
-    const targetZoom = Math.min(fitH, fitW, 1.65);
+    // Cap max zoom so panels never over-zoom or cut off text bubbles
+    const targetZoom = Math.min(fitH, fitW, isLargePanel ? 1.40 : 1.65);
 
     // Play subtle transition sound
     if (window.inkAudio) window.inkAudio.playPanelTransition();
