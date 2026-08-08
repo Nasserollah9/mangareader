@@ -163,7 +163,7 @@ class ImmersiveReader {
         m.visible = (pIndex === targetPanel.pageIndex);
       }
 
-      // Calculate target camera position and precise orthographic zoom bounds
+      // Calculate target camera position and precise edge-aware orthographic zoom bounds
       const pageAspect = page.width / page.height;
       const meshW = 2 * pageAspect;
       const meshH = 2;
@@ -173,20 +173,16 @@ class ImmersiveReader {
       const targetX = mesh.position.x - meshW / 2 + (targetPanel.bounds.x + targetPanel.bounds.w / 2) * meshW;
       const targetY = mesh.position.y + meshH / 2 - (targetPanel.bounds.y + targetPanel.bounds.h / 2) * meshH;
 
-      // Smart margin padding (95% fill for large/tall panels, 85% for normal panels)
-      const isTallPanel = targetPanel.bounds.h > 0.60;
-      const isWidePanel = targetPanel.bounds.w > 0.60;
-      const padding = (isTallPanel || isWidePanel) ? 0.95 : 0.85;
+      // Panel dimensions in world coordinates
+      const pW = Math.max(0.08, targetPanel.bounds.w) * meshW;
+      const pH = Math.max(0.08, targetPanel.bounds.h) * meshH;
 
-      const fitH = (1 / Math.max(0.08, targetPanel.bounds.h)) * padding;
-      const fitW = (screenAspect / (Math.max(0.08, targetPanel.bounds.w) * pageAspect)) * padding;
+      // Zoom required to fit panel height and width completely inside viewport with clean margins
+      const zoomForHeight = (2 / pH) * 0.82;
+      const zoomForWidth = ((2 * screenAspect) / pW) * 0.82;
 
-      let targetZoom = Math.min(fitH, fitW);
-      if (isTallPanel) {
-        targetZoom = Math.min(targetZoom, (1 / targetPanel.bounds.h) * 0.95);
-      } else {
-        targetZoom = Math.min(targetZoom, 1.65);
-      }
+      // Target zoom guarantees ALL 4 EDGES (Top, Bottom, Left, Right) are 100% visible inside the screen
+      const targetZoom = Math.min(zoomForHeight, zoomForWidth);
 
       // Play subtle transition sound
       if (window.inkAudio) window.inkAudio.playPanelTransition();
