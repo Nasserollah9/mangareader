@@ -186,6 +186,20 @@ class ImmersiveReader {
       // Direction-Aware Motion & Camera Pan
       if (!this.baseCameraPos) this.baseCameraPos = { x: targetX, y: targetY };
 
+      // SBS "The Boat" Signature 3D Camera Z-Flight Dip Effect
+      gsap.to(this.camera.position, {
+        z: 9.3,
+        duration: duration * 0.5,
+        ease: "power2.in",
+        onComplete: () => {
+          gsap.to(this.camera.position, {
+            z: 10,
+            duration: duration * 0.5,
+            ease: "power2.out"
+          });
+        }
+      });
+
       gsap.to(this.baseCameraPos, {
         x: targetX,
         y: targetY,
@@ -193,7 +207,7 @@ class ImmersiveReader {
         ease: "power2.out"
       });
 
-      // Smooth camera zoom out directly to targetZoom
+      // Smooth camera zoom directly to targetZoom
       gsap.to(this.camera, {
         zoom: targetZoom,
         duration: duration,
@@ -346,7 +360,7 @@ class ImmersiveReader {
     if (pathLine) pathLine.setAttribute('d', '');
   }
 
-  // Atmospheric Weather Particles Canvas Generator (Rain, Snow, Mist)
+  // SBS "The Boat" Multi-Layer Atmospheric Particles Engine (Rain, Ink Dust, Drift)
   startWeatherParticles(type = 'rain') {
     const canvas = document.getElementById('weather-canvas');
     if (!canvas) return;
@@ -355,34 +369,49 @@ class ImmersiveReader {
     canvas.height = window.innerHeight;
 
     const particles = [];
-    const count = type === 'rain' ? 100 : 50;
+    const count = 120;
 
     for (let i = 0; i < count; i++) {
       particles.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        len: Math.random() * 18 + 8,
-        speed: Math.random() * 8 + 10,
-        opacity: Math.random() * 0.3 + 0.1
+        len: Math.random() * 22 + 8,
+        speed: Math.random() * 6 + 7,
+        radius: Math.random() * 2.5 + 0.5,
+        opacity: Math.random() * 0.35 + 0.1,
+        type: i % 3 === 0 ? 'ink' : 'rain'
       });
     }
 
     const renderParticles = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-      ctx.lineWidth = 1.0;
 
       for (let p of particles) {
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        ctx.lineTo(p.x - 1, p.y + p.len);
-        ctx.stroke();
+        if (p.type === 'rain') {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(255, 255, 255, ${p.opacity})`;
+          ctx.lineWidth = 1.2;
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p.x - 2, p.y + p.len);
+          ctx.stroke();
 
-        p.y += p.speed;
-        p.x -= 0.5;
+          p.y += p.speed;
+          p.x -= 0.8;
+        } else { // Floating Sumi-e Ink Dust Particles
+          ctx.beginPath();
+          ctx.fillStyle = `rgba(200, 200, 220, ${p.opacity})`;
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
 
-        if (p.y > canvas.height) {
+          p.y -= p.speed * 0.2;
+          p.x += Math.sin(p.y * 0.02) * 0.5;
+        }
+
+        if (p.y > canvas.height + 20) {
           p.y = -20;
+          p.x = Math.random() * canvas.width;
+        } else if (p.y < -20) {
+          p.y = canvas.height + 20;
           p.x = Math.random() * canvas.width;
         }
       }
@@ -402,9 +431,17 @@ class ImmersiveReader {
     requestAnimationFrame(() => this.animate());
 
     if (this.camera && this.baseCameraPos) {
-      // Rock-solid steady camera position centered on current panel (Zero drift or dizziness)
+      // Steady camera base position
       this.camera.position.x = this.baseCameraPos.x;
       this.camera.position.y = this.baseCameraPos.y;
+
+      // SBS "The Boat" Floating 3D Canvas Mouse Parallax & Tilt Effect
+      const activeMesh = this.panels[this.currentPanelIndex] ? this.pageMeshes.get(this.panels[this.currentPanelIndex].pageIndex) : null;
+      if (activeMesh) {
+        activeMesh.rotation.y += (this.targetMousePos.x * 0.08 - activeMesh.rotation.y) * 0.05;
+        activeMesh.rotation.x += (-this.targetMousePos.y * 0.08 - activeMesh.rotation.x) * 0.05;
+      }
+
       this.renderer.render(this.scene, this.camera);
     }
   }
