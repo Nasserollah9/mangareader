@@ -25,6 +25,12 @@ class ImmersiveReader {
     this.targetMousePos = { x: 0, y: 0 };
     this.weatherAnimationId = null;
 
+    // Free Pan / Scroll Mode State
+    this.freePanMode = false;
+    this.isPanning = false;
+    this.panStartPos = { x: 0, y: 0 };
+    this.cameraStartPos = { x: 0, y: 0 };
+
     // Gesture Tracking
     this.touchStartX = 0;
   }
@@ -54,22 +60,79 @@ class ImmersiveReader {
       this.targetMousePos.y = (e.clientY / window.innerHeight - 0.5) * 0.25;
     });
 
+    // Mouse Drag Panning (Free Pan / Scroll Mode)
+    this.canvas.addEventListener('mousedown', (e) => {
+      if (!this.freePanMode) return;
+      this.isPanning = true;
+      this.canvas.style.cursor = 'grabbing';
+      this.panStartPos = { x: e.clientX, y: e.clientY };
+      const curX = this.baseCameraPos ? this.baseCameraPos.x : this.camera.position.x;
+      const curY = this.baseCameraPos ? this.baseCameraPos.y : this.camera.position.y;
+      this.cameraStartPos = { x: curX, y: curY };
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (this.freePanMode && this.isPanning) {
+        const zoom = this.camera.zoom || 1;
+        const dx = ((e.clientX - this.panStartPos.x) / window.innerWidth) * (2 / zoom) * (window.innerWidth / window.innerHeight);
+        const dy = ((e.clientY - this.panStartPos.y) / window.innerHeight) * (2 / zoom);
+
+        const newX = this.cameraStartPos.x - dx;
+        const newY = this.cameraStartPos.y + dy;
+
+        if (!this.baseCameraPos) this.baseCameraPos = { x: newX, y: newY };
+        else {
+          this.baseCameraPos.x = newX;
+          this.baseCameraPos.y = newY;
+        }
+
+        this.camera.position.x = newX;
+        this.camera.position.y = newY;
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (this.freePanMode && this.isPanning) {
+        this.isPanning = false;
+        this.canvas.style.cursor = 'grab';
+      }
+    });
+
+    // Scroll Wheel Zoom in Free Pan Mode
+    this.canvas.addEventListener('wheel', (e) => {
+      if (!this.freePanMode) return;
+      e.preventDefault();
+
+      const delta = e.deltaY < 0 ? 0.15 : -0.15;
+      const newZoom = Math.max(0.5, Math.min(3.5, this.camera.zoom + delta));
+
+      gsap.killTweensOf(this.camera);
+      gsap.to(this.camera, {
+        zoom: newZoom,
+        duration: 0.2,
+        ease: "power1.out",
+        onUpdate: () => this.camera.updateProjectionMatrix()
+      });
+    }, { passive: false });
+
     // Touch Swipes
     this.canvas.addEventListener('touchstart', (e) => {
       this.touchStartX = e.touches[0].clientX;
     });
     this.canvas.addEventListener('touchend', (e) => {
+      if (this.freePanMode) return;
       const touchEndX = e.changedTouches[0].clientX;
       const diffX = touchEndX - this.touchStartX;
       if (Math.abs(diffX) > 50) {
-        if (diffX < 0) this.nextPanel(); // Swipe Left -> Next (RTL)
-        else this.prevPanel(); // Swipe Right -> Prev
+        if (diffX < 0) this.nextPanel();
+        else this.prevPanel();
       }
     });
 
-    // Click Navigation (Click Right -> Next RTL, Click Left -> Prev)
+    // Click Navigation
     this.canvas.addEventListener('click', (e) => {
-      if (e.target.closest('.reader-hud-top') || e.target.closest('.btn-ink')) return;
+      if (this.freePanMode) return;
+      if (e.target.closest('.reader-hud-top') || e.target.closest('.hud-icon-btn') || e.target.closest('.btn-ink')) return;
       if (e.clientX > window.innerWidth * 0.45) {
         this.nextPanel();
       } else {
@@ -282,6 +345,39 @@ class ImmersiveReader {
     if (this.currentPanelIndex > 0) {
       this.navigateToPanel(this.currentPanelIndex - 1);
     }
+  }
+
+  toggleFreePan() {
+    this.freePanMode = !this.freePanMode;
+    const icon = document.getElementById('icon-freepan');
+    const btn = document.getElementById('btn-toggle-freepan');
+
+    if (this.freePanMode) {
+      if (icon) icon.setAttribute('data-lucide', 'move');
+      if (btn) btn.classList.add('active');
+      this.canvas.style.cursor = 'grab';
+
+      // Zoom out to show full page frame
+      gsap.killTweensOf(this.camera);
+      gsap.to(this.camera, {
+        zoom: 0.95,
+        duration: 0.4,
+        ease: "power2.out",
+        onUpdate: () => this.camera.updateProjectionMatrix()
+      });
+
+      if (window.inkApp) window.inkApp.showNotification('Free Scroll / Pan Mode Active — Drag or scroll wheel to explore full page', 'info');
+    } else {
+      if (icon) icon.setAttribute('data-lucide', 'hand');
+      if (btn) btn.classList.remove('active');
+      this.canvas.style.cursor = 'pointer';
+
+      // Re-focus camera on current panel
+      this.navigateToPanel(this.currentPanelIndex);
+      if (window.inkApp) window.inkApp.showNotification('Panel Focus Mode Active', 'info');
+    }
+
+    if (window.lucide) lucide.createIcons();
   }
 
   showChapterCompleteModal() {

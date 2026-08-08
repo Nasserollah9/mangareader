@@ -96,6 +96,11 @@ class InkScrollApp {
 
     this.on('btn-toggle-fullscreen', 'click', () => this.toggleFullscreen());
 
+    // Free Pan / Scroll Mode Toggle
+    this.on('btn-toggle-freepan', 'click', () => {
+      if (window.immersiveReader) window.immersiveReader.toggleFreePan();
+    });
+
     // Editor Modal Controls
     this.on('btn-close-editor', 'click', () => window.panelEditor.close());
     this.on('btn-editor-close', 'click', () => window.panelEditor.close());
@@ -158,16 +163,18 @@ class InkScrollApp {
       if (!readerActive) return;
 
       if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-        window.immersiveReader.nextPanel();
+        if (!window.immersiveReader.freePanMode) window.immersiveReader.nextPanel();
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-        window.immersiveReader.prevPanel();
+        if (!window.immersiveReader.freePanMode) window.immersiveReader.prevPanel();
       } else if (e.key === ' ') {
         e.preventDefault();
-        window.immersiveReader.nextPanel();
+        if (!window.immersiveReader.freePanMode) window.immersiveReader.nextPanel();
       } else if (e.key === 'Escape') {
         window.immersiveReader.exitReader();
       } else if (e.key === 'f' || e.key === 'F') {
         this.toggleFullscreen();
+      } else if (e.key === 'm' || e.key === 'M') {
+        window.immersiveReader.toggleFreePan();
       }
     });
   }

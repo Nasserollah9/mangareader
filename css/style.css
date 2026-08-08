@@ -575,6 +575,18 @@ html, body {
   transform: translateY(-1px);
 }
 
+.hud-icon-btn.active {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent-gold);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.35), inset 0 0 8px rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.hud-icon-btn.active:hover {
+  background: rgba(245, 158, 11, 0.22);
+  color: #fcd34d;
+}
+
 .hud-icon-btn:hover .tooltip {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
