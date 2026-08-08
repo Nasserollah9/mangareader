@@ -163,7 +163,7 @@ class ImmersiveReader {
         m.visible = (pIndex === targetPanel.pageIndex);
       }
 
-      // Calculate target camera position and precise edge-aware orthographic zoom bounds
+      // Calculate target camera position and zoom out to reveal full panel
       const pageAspect = page.width / page.height;
       const meshW = 2 * pageAspect;
       const meshH = 2;
@@ -173,16 +173,12 @@ class ImmersiveReader {
       const targetX = mesh.position.x - meshW / 2 + (targetPanel.bounds.x + targetPanel.bounds.w / 2) * meshW;
       const targetY = mesh.position.y + meshH / 2 - (targetPanel.bounds.y + targetPanel.bounds.h / 2) * meshH;
 
-      // Panel dimensions in world coordinates
-      const pW = Math.max(0.08, targetPanel.bounds.w) * meshW;
-      const pH = Math.max(0.08, targetPanel.bounds.h) * meshH;
+      // Zoom out to fit 100% of full panel width & height on screen with clean comfortable margin
+      const zoomHeight = (1 / Math.max(0.08, targetPanel.bounds.h)) * 0.88;
+      const zoomWidth = (screenAspect / (Math.max(0.08, targetPanel.bounds.w) * pageAspect)) * 0.88;
 
-      // Zoom required to fit panel height and width completely inside viewport with clean margins
-      const zoomForHeight = (2 / pH) * 0.82;
-      const zoomForWidth = ((2 * screenAspect) / pW) * 0.82;
-
-      // Target zoom guarantees ALL 4 EDGES (Top, Bottom, Left, Right) are 100% visible inside the screen
-      const targetZoom = Math.min(zoomForHeight, zoomForWidth);
+      // Target zoom guarantees the entire panel fits on screen completely without over-zooming
+      const targetZoom = Math.min(zoomHeight, zoomWidth);
 
       // Play subtle transition sound
       if (window.inkAudio) window.inkAudio.playPanelTransition();
