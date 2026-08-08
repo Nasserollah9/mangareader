@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>InkScroll — Immersive Manga Reader</title>
   <meta name="description" content="Cinematic, panel-by-panel manga reading experience with sumi-e ink aesthetics, WebGL zooms, parallax depth, and atmospheric soundscapes.">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Outfit:wght@300;500;700&family=Plus+Jakarta+Sans:wght@400;500;600&family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="css/style.css">
   
   <!-- External Libraries via CDN -->
@@ -50,6 +55,7 @@
       
       <!-- Hero Header & Import Bar -->
       <section class="hero-banner">
+        <div class="hero-ambient-bg"></div>
         <h1 class="hero-title">Step Into Living Ink</h1>
         <p class="hero-subtitle">Cinematic panel-by-panel manga reading with right-to-left flow, atmospheric soundscapes, and dramatic WebGL zooms.</p>
         
@@ -111,21 +117,21 @@
       </div>
 
       <div class="reader-controls">
-        <button class="btn-ink" id="btn-toggle-autoscroll" title="Toggle Auto-Scroll Mode [Space]">
+        <button class="btn-ink" id="btn-toggle-autoscroll" data-tooltip="Auto-Scroll [Space]">
           <i data-lucide="play" id="icon-autoscroll"></i>
           <span id="label-autoscroll">Auto-Scroll</span>
         </button>
 
-        <button class="btn-ink" id="btn-toggle-audio" title="Toggle Ambient Audio">
+        <button class="btn-ink" id="btn-toggle-audio" data-tooltip="Ambient Audio">
           <i data-lucide="volume-2" id="icon-audio"></i>
         </button>
 
-        <button class="btn-ink" id="btn-open-editor" title="Visual Panel Editor">
+        <button class="btn-ink" id="btn-open-editor" data-tooltip="Panel Editor">
           <i data-lucide="crop"></i>
           <span>Edit Panels</span>
         </button>
 
-        <button class="btn-ink" id="btn-toggle-fullscreen" title="Fullscreen [F]">
+        <button class="btn-ink" id="btn-toggle-fullscreen" data-tooltip="Fullscreen [F]">
           <i data-lucide="maximize"></i>
         </button>
       </div>
@@ -133,6 +139,7 @@
 
     <!-- Ink-Wash Page Boundary Transition & Loading Overlay -->
     <div id="ink-curtain-overlay" class="ink-curtain-overlay"></div>
+    <div id="sumie-spotlight-ring" class="sumie-spotlight-ring"></div>
 
     <!-- Bottom Right Panel Counter & Navigation Badge -->
     <div id="panel-counter-badge" class="panel-counter-badge">
@@ -265,10 +272,11 @@
 
   <!-- Application Modules -->
   <script src="js/storage.js"></script>
-  <script src="js/importer.js"></script>
   <script src="js/detector.js"></script>
+  <script src="js/importer.js"></script>
   <script src="js/editor.js"></script>
   <script src="js/audio.js"></script>
+  <script src="js/ui-fx.js"></script>
   <script src="js/reader.js"></script>
   <script src="js/demo_chapter.js"></script>
   <script src="js/app.js"></script>

@@ -215,6 +215,12 @@ class ImmersiveReader {
         onUpdate: () => this.camera.updateProjectionMatrix()
       });
 
+      // 3D Volumetric Cloud Parting & Reveal Animation
+      this.triggerCloudParting();
+
+      // Trigger directional sweep vignette overlay
+      if (window.inkUIFX) window.inkUIFX.triggerDirectionalSweep();
+
       // Update UI Progress & Panel Counter Badge
       this.updateProgressUI(index);
 
@@ -241,10 +247,19 @@ class ImmersiveReader {
     const progress = Math.round((current / total) * 100);
 
     const counterText = document.getElementById('panel-counter-text');
-    if (counterText) counterText.textContent = `Panel ${current} / ${total}`;
+    if (counterText && window.inkUIFX) {
+      window.inkUIFX.triggerCounterTick(counterText, `Panel ${current} / ${total}`);
+    } else if (counterText) {
+      counterText.textContent = `Panel ${current} / ${total}`;
+    }
 
     const fill = document.getElementById('reader-progress-fill');
-    if (fill) fill.style.width = `${progress}%`;
+    if (fill && typeof gsap !== 'undefined') {
+      gsap.killTweensOf(fill);
+      gsap.to(fill, { width: `${progress}%`, duration: 0.4, ease: 'power2.out' });
+    } else if (fill) {
+      fill.style.width = `${progress}%`;
+    }
 
     if (window.inkStorage && this.chapter && this.panels[index]) {
       window.inkStorage.updateProgress(this.chapter.id, progress, this.panels[index].id);
@@ -360,67 +375,66 @@ class ImmersiveReader {
     if (pathLine) pathLine.setAttribute('d', '');
   }
 
-  // SBS "The Boat" Multi-Layer Atmospheric Particles Engine (Rain, Ink Dust, Drift)
-  startWeatherParticles(type = 'rain') {
+  // Living Manga Ink Portal Engine - Crimson Energy Shards & Dynamic Focus Pulse
+  startWeatherParticles() {
     const canvas = document.getElementById('weather-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const particles = [];
-    const count = 120;
+    this.inkParticles = [];
+    const count = 40;
 
     for (let i = 0; i < count; i++) {
-      particles.push({
+      this.inkParticles.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        len: Math.random() * 22 + 8,
-        speed: Math.random() * 6 + 7,
-        radius: Math.random() * 2.5 + 0.5,
-        opacity: Math.random() * 0.35 + 0.1,
-        type: i % 3 === 0 ? 'ink' : 'rain'
+        radius: Math.random() * 2.2 + 0.6,
+        vx: (Math.random() - 0.5) * 0.6,
+        vy: -Math.random() * 1.2 - 0.4,
+        alpha: Math.random() * 0.6 + 0.2
       });
     }
 
-    const renderParticles = () => {
+    const renderInkPortal = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      for (let p of particles) {
-        if (p.type === 'rain') {
-          ctx.beginPath();
-          ctx.strokeStyle = `rgba(255, 255, 255, ${p.opacity})`;
-          ctx.lineWidth = 1.2;
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(p.x - 2, p.y + p.len);
-          ctx.stroke();
+      // Render floating crimson & sumi-e ink energy embers
+      for (let p of this.inkParticles) {
+        p.x += p.vx;
+        p.y += p.vy;
 
-          p.y += p.speed;
-          p.x -= 0.8;
-        } else { // Floating Sumi-e Ink Dust Particles
-          ctx.beginPath();
-          ctx.fillStyle = `rgba(200, 200, 220, ${p.opacity})`;
-          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-          ctx.fill();
-
-          p.y -= p.speed * 0.2;
-          p.x += Math.sin(p.y * 0.02) * 0.5;
-        }
-
-        if (p.y > canvas.height + 20) {
-          p.y = -20;
-          p.x = Math.random() * canvas.width;
-        } else if (p.y < -20) {
-          p.y = canvas.height + 20;
+        if (p.y < -10) {
+          p.y = canvas.height + 10;
           p.x = Math.random() * canvas.width;
         }
+
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(220, 38, 38, ${p.alpha})`;
+        ctx.shadowColor = '#dc2626';
+        ctx.shadowBlur = 8;
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
       }
 
-      this.weatherAnimationId = requestAnimationFrame(renderParticles);
+      this.weatherAnimationId = requestAnimationFrame(renderInkPortal);
     };
 
     if (this.weatherAnimationId) cancelAnimationFrame(this.weatherAnimationId);
-    renderParticles();
+    renderInkPortal();
+  }
+
+  // Trigger Crimson Energy Shard Burst on Panel Advance
+  triggerCloudParting() {
+    const burst = document.getElementById('sumie-spotlight-ring');
+    if (burst) {
+      burst.classList.remove('pulse');
+      void burst.offsetWidth;
+      burst.classList.add('pulse');
+      setTimeout(() => burst.classList.remove('pulse'), 650);
+    }
   }
 
   triggerScreenShake() {

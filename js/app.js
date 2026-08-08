@@ -126,6 +126,32 @@ class InkScrollApp {
       btnCompleteReread.addEventListener('click', () => window.immersiveReader.rereadChapter());
     }
 
+    // Reader Top Bar Auto-Hide on Pointer Idle
+    let hudHideTimer = null;
+    const topHud = document.getElementById('reader-hud');
+
+    window.addEventListener('pointermove', () => {
+      const readerActive = document.getElementById('view-reader').classList.contains('active');
+      if (!readerActive || !topHud) return;
+
+      if (typeof gsap !== 'undefined') {
+        gsap.killTweensOf(topHud);
+        gsap.to(topHud, { autoAlpha: 1, y: 0, duration: 0.25 });
+      } else {
+        topHud.style.opacity = '1';
+      }
+
+      if (hudHideTimer) clearTimeout(hudHideTimer);
+      hudHideTimer = setTimeout(() => {
+        if (typeof gsap !== 'undefined') {
+          gsap.killTweensOf(topHud);
+          gsap.to(topHud, { autoAlpha: 0, y: -12, duration: 0.4 });
+        } else {
+          topHud.style.opacity = '0';
+        }
+      }, 2500);
+    });
+
     // Global Keybindings (Arrow Keys, ESC, F, Space)
     window.addEventListener('keydown', (e) => {
       const readerActive = document.getElementById('view-reader').classList.contains('active');
@@ -165,6 +191,7 @@ class InkScrollApp {
         <div class="card-thumb" style="background-image: url('${coverUrl}')">
           <span class="card-stamp">${ch.sourceType.toUpperCase()}</span>
           <button class="card-delete-btn" title="Delete Chapter"><i data-lucide="trash-2"></i></button>
+          <div class="play-overlay"><i data-lucide="play"></i></div>
         </div>
         <div class="card-body">
           <div class="card-title">${ch.title}</div>
@@ -189,10 +216,25 @@ class InkScrollApp {
         });
       }
 
-      card.addEventListener('click', () => this.openChapterInReader(fullData));
+      card.addEventListener('click', () => {
+        if (fullData) this.openChapterInReader(fullData);
+      });
+
       grid.appendChild(card);
     }
     if (window.lucide) lucide.createIcons();
+
+    // GSAP Card Grid Stagger Animation
+    if (typeof gsap !== 'undefined') {
+      gsap.killTweensOf('.chapter-card');
+      gsap.from('.chapter-card', {
+        y: 24,
+        opacity: 0,
+        duration: 0.5,
+        ease: 'power3.out',
+        stagger: { each: 0.05, from: 'start' }
+      });
+    }
   }
 
   async openChapterInReader(chapterData) {
