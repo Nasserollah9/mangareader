@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/api/scrape", "destination": "/api/scrape.py" },
+    { "source": "/api/proxy", "destination": "/api/proxy.py" }
+  ]
+}

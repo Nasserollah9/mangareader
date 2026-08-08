@@ -1,0 +1,10 @@
+*.html.bak
+*.log
+scraped_sample.html
+inspect_html.py
+test_filter.py
+test_filter2.py
+test_panel_detector.py
+__pycache__/
+.vercel
+.git/

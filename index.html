@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InkScroll — Immersive Manga Reader</title>
+  <meta name="description" content="Cinematic, panel-by-panel manga reading experience with sumi-e ink aesthetics, WebGL zooms, parallax depth, and atmospheric soundscapes.">
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- External Libraries via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- SVG Paper Grain Overlay -->
+  <div class="ink-grain"></div>
+
+  <!-- Navigation Bar -->
+  <nav class="ink-navbar">
+    <div class="brand-logo" id="nav-brand">
+      <div class="brand-stamp">墨</div>
+      <span>InkScroll</span>
+    </div>
+
+    <div class="nav-actions">
+      <button class="btn-ink" id="btn-open-import">
+        <i data-lucide="plus-circle"></i>
+        <span>Import Chapter</span>
+      </button>
+
+      <button class="btn-ink" id="btn-import-file">
+        <i data-lucide="file-up"></i>
+        <span>Upload PDF</span>
+      </button>
+
+      <button class="btn-ink" id="btn-toggle-settings">
+        <i data-lucide="settings"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- View 1: Library Screen -->
+  <main class="view-screen active" id="view-library">
+    <div class="library-container">
+      
+      <!-- Hero Header & Import Bar -->
+      <section class="hero-banner">
+        <h1 class="hero-title">Step Into Living Ink</h1>
+        <p class="hero-subtitle">Cinematic panel-by-panel manga reading with right-to-left flow, atmospheric soundscapes, and dramatic WebGL zooms.</p>
+        
+        <div class="import-bar">
+          <input type="url" id="hero-url-input" class="import-input" placeholder="Paste manga URL (e.g., https://3asq.online/manga/one-piece/1190/)">
+          <button class="btn-ink btn-ink-primary" id="hero-import-btn">
+            <i data-lucide="sparkles"></i>
+            <span>Compile & Read</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Library Grid Header -->
+      <div class="library-section-header">
+        <h2 class="section-title">
+          <i data-lucide="book-open"></i>
+          <span>Compiled Chapters</span>
+        </h2>
+
+        <div style="display: flex; gap: 10px;">
+          <button class="btn-ink" id="btn-load-demo">
+            <i data-lucide="flame"></i>
+            <span>Play Demo Chapter</span>
+          </button>
+          
+          <button class="btn-ink" id="btn-import-inkscroll">
+            <i data-lucide="download"></i>
+            <span>Import .inkscroll</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Chapter Grid Cards -->
+      <div class="chapter-grid" id="chapter-grid">
+        <!-- Cards injected dynamically via JS -->
+      </div>
+    </div>
+  </main>
+
+  <!-- View 2: Immersive Reader View -->
+  <section class="view-screen reader-screen" id="view-reader">
+    <!-- WebGL Canvas for 3D Panel Camera & Shaders -->
+    <canvas id="reader-canvas" class="reader-webgl-canvas"></canvas>
+
+    <!-- Weather Particles Canvas (Rain/Snow/Mist) -->
+    <canvas id="weather-canvas" class="weather-canvas"></canvas>
+
+    <!-- Japanese Onomatopoeia SFX & Dialogue Overlay -->
+    <div id="sfx-container" class="sfx-overlay-container"></div>
+
+    <!-- Reader Top HUD Bar -->
+    <header class="reader-hud-top" id="reader-hud">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <button class="btn-ink" id="btn-exit-reader">
+          <i data-lucide="arrow-left"></i>
+          <span>Library</span>
+        </button>
+        <span class="reader-chapter-title" id="reader-title">Loading Chapter...</span>
+      </div>
+
+      <div class="reader-controls">
+        <button class="btn-ink" id="btn-toggle-autoscroll" title="Toggle Auto-Scroll Mode [Space]">
+          <i data-lucide="play" id="icon-autoscroll"></i>
+          <span id="label-autoscroll">Auto-Scroll</span>
+        </button>
+
+        <button class="btn-ink" id="btn-toggle-audio" title="Toggle Ambient Audio">
+          <i data-lucide="volume-2" id="icon-audio"></i>
+        </button>
+
+        <button class="btn-ink" id="btn-open-editor" title="Visual Panel Editor">
+          <i data-lucide="crop"></i>
+          <span>Edit Panels</span>
+        </button>
+
+        <button class="btn-ink" id="btn-toggle-fullscreen" title="Fullscreen [F]">
+          <i data-lucide="maximize"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Bottom Progress Line -->
+    <div class="reader-progress-line">
+      <div class="reader-progress-fill" id="reader-progress-fill"></div>
+    </div>
+  </section>
+
+  <!-- Modal 1: Import Modal -->
+  <div class="modal-overlay" id="modal-import">
+    <div class="modal-window" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Import Manga Chapter</h3>
+        <button class="btn-ink" id="btn-close-import"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body" style="flex-direction: column;">
+        <label class="setting-label">Option 1: Paste Manga URL</label>
+        <input type="url" id="import-modal-url" class="import-input" placeholder="https://3asq.online/manga/one-piece/1190/">
+        
+        <label class="setting-label" style="margin-top: 16px;">Option 2: Direct Image URLs (comma/newline separated)</label>
+        <textarea id="import-modal-urls" class="import-input" style="height: 90px; resize: vertical;" placeholder="https://domain.com/p1.jpg&#10;https://domain.com/p2.jpg"></textarea>
+        
+        <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 12px;">
+          <button class="btn-ink" id="btn-cancel-import">Cancel</button>
+          <button class="btn-ink btn-ink-primary" id="btn-submit-import">Start Processing</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Bounding Box Visual Panel Editor -->
+  <div class="modal-overlay" id="modal-editor">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 class="modal-title">Manga Panel Boundary & Reading Order Editor</h3>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn-ink" id="btn-editor-auto-detect"><i data-lucide="wand-2"></i> Re-Detect</button>
+          <button class="btn-ink btn-ink-primary" id="btn-editor-save"><i data-lucide="check"></i> Save Panels</button>
+          <button class="btn-ink" id="btn-editor-close"><i data-lucide="x"></i></button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="editor-canvas-container" id="editor-canvas-wrap">
+          <canvas id="editor-canvas"></canvas>
+        </div>
+        <div class="editor-sidebar">
+          <h4 style="font-family: var(--font-serif); font-size: 1rem;">Detected Panels</h4>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">Manga reading order: Right-to-Left, Top-to-Bottom.</p>
+          <div id="editor-panel-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+            <!-- Panels listed dynamically -->
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Atmospheric Scene Mood</span>
+            <select id="editor-mood-select" class="setting-select">
+              <option value="calm">Calm (Cherry Blossoms / Wind)</option>
+              <option value="action" selected>Action (Rain & Screen Shake)</option>
+              <option value="dramatic">Dramatic (Thunder Storm)</option>
+              <option value="mysterious">Mysterious (Dust Particles)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Drawer -->
+  <div class="settings-drawer" id="settings-drawer">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+      <h3 style="font-family: var(--font-serif); font-size: 1.2rem;">Reader Settings</h3>
+      <button class="btn-ink" id="btn-close-settings"><i data-lucide="x"></i></button>
+    </div>
+
+    <div class="setting-row">
+      <span class="setting-label">Reading Direction</span>
+      <select id="setting-direction" class="setting-select">
+        <option value="rtl" selected>Right-to-Left (Authentic Manga)</option>
+        <option value="ltr">Left-to-Right (Western Comic)</option>
+      </select>
+    </div>
+
+    <div class="setting-row">
+      <span class="setting-label">Auto-Scroll Speed</span>
+      <input type="range" id="setting-scroll-speed" class="setting-range" min="1" max="10" value="5">
+    </div>
+
+    <div class="setting-row">
+      <span class="setting-label">Visual Effects Intensity</span>
+      <select id="setting-fx-intensity" class="setting-select">
+        <option value="cinematic" selected>Cinematic (Zoom + Parallax + Particles)</option>
+        <option value="subtle">Subtle (Light Zoom)</option>
+        <option value="none">Reduced Motion (Flat)</option>
+      </select>
+    </div>
+
+    <div class="setting-row">
+      <span class="setting-label">Ambient Volume</span>
+      <input type="range" id="setting-volume" class="setting-range" min="0" max="100" value="70">
+    </div>
+  </div>
+
+  <!-- Hidden File Input for PDF and InkScroll files -->
+  <input type="file" id="file-input-pdf" accept=".pdf" style="display: none;">
+  <input type="file" id="file-input-inkscroll" accept=".inkscroll,.json" style="display: none;">
+
+  <!-- Application Modules -->
+  <script src="js/storage.js"></script>
+  <script src="js/importer.js"></script>
+  <script src="js/detector.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/reader.js"></script>
+  <script src="js/demo_chapter.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
