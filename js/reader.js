@@ -149,19 +149,23 @@ class ImmersiveReader {
 
     if (!mesh || !page) return;
 
-    // Calculate target camera position and zoom bounds for panel
+    // Calculate target camera position and precise orthographic zoom bounds
     const pageAspect = page.width / page.height;
     const meshW = 2 * pageAspect;
     const meshH = 2;
+    const screenAspect = window.innerWidth / window.innerHeight;
 
     // Panel center bounds mapped to world coordinates
     const targetX = mesh.position.x - meshW / 2 + (panel.bounds.x + panel.bounds.w / 2) * meshW;
     const targetY = mesh.position.y + meshH / 2 - (panel.bounds.y + panel.bounds.h / 2) * meshH;
 
-    // Zoom scale calculation (clean framing without extreme zoom)
-    const zoomW = 1 / Math.max(0.18, panel.bounds.w);
-    const zoomH = 1 / Math.max(0.18, panel.bounds.h);
-    const targetZoom = Math.min(zoomW, zoomH) * 0.90;
+    // Generous 25% margin padding so text bubbles & top page titles are NEVER cut off
+    const padding = 0.75;
+    const fitH = (1 / Math.max(0.08, panel.bounds.h)) * padding;
+    const fitW = (screenAspect / (Math.max(0.08, panel.bounds.w) * pageAspect)) * padding;
+
+    // Cap max zoom to 1.65 so even small panels never over-zoom or cut off text bubbles
+    const targetZoom = Math.min(fitH, fitW, 1.65);
 
     // Play subtle transition sound
     if (window.inkAudio) window.inkAudio.playPanelTransition();
