@@ -29,36 +29,42 @@ class InkScrollApp {
     if (window.lucide) lucide.createIcons();
   }
 
+  on(id, event, callback) {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener(event, callback);
+  }
+
   bindEvents() {
     // Brand Click -> Return to Library
-    document.getElementById('nav-brand').addEventListener('click', () => this.showView('library'));
-    document.getElementById('btn-exit-reader').addEventListener('click', () => window.immersiveReader.exitReader());
+    this.on('nav-brand', 'click', () => this.showView('library'));
+    this.on('btn-exit-reader', 'click', () => window.immersiveReader.exitReader());
 
-    // Import Buttons
-    document.getElementById('btn-open-import').addEventListener('click', () => this.openImportModal());
-    document.getElementById('btn-close-import').addEventListener('click', () => this.closeImportModal());
-    document.getElementById('btn-cancel-import').addEventListener('click', () => this.closeImportModal());
-    document.getElementById('btn-submit-import').addEventListener('click', () => this.handleModalImport());
+    // Import Buttons & Modal Controls
+    this.on('btn-open-import', 'click', () => this.openImportModal());
+    this.on('btn-close-import', 'click', () => this.closeImportModal());
+    this.on('btn-cancel-import', 'click', () => this.closeImportModal());
+    this.on('btn-submit-import', 'click', () => this.handleModalImport());
 
     // Hero URL Import Bar
-    document.getElementById('hero-import-btn').addEventListener('click', () => {
-      const url = document.getElementById('hero-url-input').value.trim();
+    this.on('hero-import-btn', 'click', () => {
+      const input = document.getElementById('hero-url-input');
+      const url = input ? input.value.trim() : '';
       if (url) this.processUrlImport(url);
     });
 
     // File Pickers (PDF & .inkscroll)
-    document.getElementById('btn-import-file').addEventListener('click', () => {
-      document.getElementById('file-input-pdf').click();
+    this.on('btn-import-file', 'click', () => {
+      document.getElementById('file-input-pdf')?.click();
     });
-    document.getElementById('file-input-pdf').addEventListener('change', (e) => this.handlePdfUpload(e));
+    this.on('file-input-pdf', 'change', (e) => this.handlePdfUpload(e));
 
-    document.getElementById('btn-import-inkscroll').addEventListener('click', () => {
-      document.getElementById('file-input-inkscroll').click();
+    this.on('btn-import-inkscroll', 'click', () => {
+      document.getElementById('file-input-inkscroll')?.click();
     });
-    document.getElementById('file-input-inkscroll').addEventListener('change', (e) => this.handleInkScrollImport(e));
+    this.on('file-input-inkscroll', 'change', (e) => this.handleInkScrollImport(e));
 
     // Play Demo Chapter Button
-    document.getElementById('btn-load-demo').addEventListener('click', async () => {
+    this.on('btn-load-demo', 'click', async () => {
       const demoData = await window.inkStorage.getChapterFull('demo_blade_of_ink');
       if (demoData) {
         this.openChapterInReader(demoData);
@@ -66,18 +72,18 @@ class InkScrollApp {
     });
 
     // Reader Top Bar Controls
-    document.getElementById('btn-toggle-autoscroll').addEventListener('click', () => {
+    this.on('btn-toggle-autoscroll', 'click', () => {
       window.immersiveReader.toggleAutoScroll();
     });
 
-    document.getElementById('btn-toggle-audio').addEventListener('click', () => {
+    this.on('btn-toggle-audio', 'click', () => {
       const muted = window.inkAudio.toggleMute();
       const icon = document.getElementById('icon-audio');
       if (icon) icon.setAttribute('data-lucide', muted ? 'volume-x' : 'volume-2');
       if (window.lucide) lucide.createIcons();
     });
 
-    document.getElementById('btn-open-editor').addEventListener('click', () => {
+    this.on('btn-open-editor', 'click', () => {
       if (window.immersiveReader.chapter) {
         const fullData = {
           chapter: window.immersiveReader.chapter,
@@ -88,11 +94,12 @@ class InkScrollApp {
       }
     });
 
-    document.getElementById('btn-toggle-fullscreen').addEventListener('click', () => this.toggleFullscreen());
+    this.on('btn-toggle-fullscreen', 'click', () => this.toggleFullscreen());
 
     // Editor Modal Controls
-    document.getElementById('btn-editor-close').addEventListener('click', () => window.panelEditor.close());
-    document.getElementById('btn-editor-save').addEventListener('click', async () => {
+    this.on('btn-close-editor', 'click', () => window.panelEditor.close());
+    this.on('btn-editor-close', 'click', () => window.panelEditor.close());
+    this.on('btn-editor-save', 'click', async () => {
       const ed = window.panelEditor;
       if (ed.currentChapter) {
         await window.inkStorage.saveChapter({
@@ -108,23 +115,16 @@ class InkScrollApp {
     });
 
     // Settings Drawer
-    document.getElementById('btn-toggle-settings').addEventListener('click', () => {
-      document.getElementById('settings-drawer').classList.toggle('open');
+    this.on('btn-toggle-settings', 'click', () => {
+      document.getElementById('settings-drawer')?.classList.toggle('open');
     });
-    document.getElementById('btn-close-settings').addEventListener('click', () => {
-      document.getElementById('settings-drawer').classList.remove('open');
+    this.on('btn-close-settings', 'click', () => {
+      document.getElementById('settings-drawer')?.classList.remove('open');
     });
 
     // Chapter Complete Modal Buttons
-    const btnCompleteMain = document.getElementById('btn-complete-main');
-    if (btnCompleteMain) {
-      btnCompleteMain.addEventListener('click', () => window.immersiveReader.exitReader());
-    }
-
-    const btnCompleteReread = document.getElementById('btn-complete-reread');
-    if (btnCompleteReread) {
-      btnCompleteReread.addEventListener('click', () => window.immersiveReader.rereadChapter());
-    }
+    this.on('btn-complete-main', 'click', () => window.immersiveReader.exitReader());
+    this.on('btn-complete-reread', 'click', () => window.immersiveReader.rereadChapter());
 
     // Reader Top Bar Auto-Hide on Pointer Idle
     let hudHideTimer = null;
@@ -330,16 +330,18 @@ class InkScrollApp {
   }
 
   openImportModal() {
-    document.getElementById('modal-import').classList.add('active');
+    document.getElementById('modal-import')?.classList.add('active');
   }
 
   closeImportModal() {
-    document.getElementById('modal-import').classList.remove('active');
+    document.getElementById('modal-import')?.classList.remove('active');
   }
 
   async handleModalImport() {
-    const url = document.getElementById('import-modal-url').value.trim();
-    const rawUrls = document.getElementById('import-modal-urls').value.trim();
+    const input = document.getElementById('modal-url-input') || document.getElementById('import-modal-url');
+    const url = input ? input.value.trim() : '';
+    const rawInput = document.getElementById('import-modal-urls');
+    const rawUrls = rawInput ? rawInput.value.trim() : '';
 
     this.closeImportModal();
 
