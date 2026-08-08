@@ -173,12 +173,12 @@ class ImmersiveReader {
       const targetX = mesh.position.x - meshW / 2 + (targetPanel.bounds.x + targetPanel.bounds.w / 2) * meshW;
       const targetY = mesh.position.y + meshH / 2 - (targetPanel.bounds.y + targetPanel.bounds.h / 2) * meshH;
 
-      // Balanced middle framing: scaleFactor 0.76, max zoom cap 1.15
-      const zoomHeight = (1 / Math.max(0.15, targetPanel.bounds.h)) * 0.76;
-      const zoomWidth = (screenAspect / (Math.max(0.15, targetPanel.bounds.w) * pageAspect)) * 0.76;
+      // Subtle zoom-in boost: scaleFactor 0.84, max zoom cap 1.28
+      const zoomHeight = (1 / Math.max(0.15, targetPanel.bounds.h)) * 0.84;
+      const zoomWidth = (screenAspect / (Math.max(0.15, targetPanel.bounds.w) * pageAspect)) * 0.84;
 
-      // Middle zoom cap: 1.15x guarantees crisp framing without over-zooming in or out
-      const targetZoom = Math.min(zoomHeight, zoomWidth, 1.15);
+      // Subtle zoom-in cap: 1.28x provides cozy legibility while keeping full panel frame visible
+      const targetZoom = Math.min(zoomHeight, zoomWidth, 1.28);
 
       // Play subtle transition sound
       if (window.inkAudio) window.inkAudio.playPanelTransition();
