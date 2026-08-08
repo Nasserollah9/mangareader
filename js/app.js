@@ -186,21 +186,27 @@ class InkScrollApp {
 
       const fullData = await window.inkStorage.getChapterFull(ch.id);
       const coverUrl = fullData?.pages[0]?.imageUrl || '';
+      const badgeClass = ch.sourceType === 'pdf' ? 'badge-pdf' : ch.sourceType === 'inkscroll' ? 'badge-inkscroll' : 'badge-scraped';
 
       card.innerHTML = `
-        <div class="card-thumb" style="background-image: url('${coverUrl}')">
-          <span class="card-stamp">${ch.sourceType.toUpperCase()}</span>
-          <button class="card-delete-btn" title="Delete Chapter"><i data-lucide="trash-2"></i></button>
-          <div class="play-overlay"><i data-lucide="play"></i></div>
-        </div>
-        <div class="card-body">
-          <div class="card-title">${ch.title}</div>
-          <div class="card-meta">
-            <span>${fullData?.pages.length || 0} Pages</span>
-            <span>${fullData?.panels.length || 0} Panels</span>
+        <div class="chapter-card-inner">
+          <div class="card-thumb-wrapper">
+            <div class="card-thumb" style="background-image: url('${coverUrl}')"></div>
+            <span class="card-stamp ${badgeClass}">${ch.sourceType.toUpperCase()}</span>
+            <button class="card-delete-btn" title="Delete Chapter"><i data-lucide="trash-2"></i></button>
+            <div class="chapter-card-overlay">
+              <div class="play-button"><i data-lucide="play"></i></div>
+            </div>
           </div>
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill" style="width: ${ch.progress || 0}%"></div>
+          <div class="card-body">
+            <div class="card-title">${ch.title}</div>
+            <div class="card-meta">
+              <span>${fullData?.pages.length || 0} Pages</span>
+              <span>${fullData?.panels.length || 0} Panels</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" style="width: ${ch.progress || 0}%"></div>
+            </div>
           </div>
         </div>
       `;
@@ -224,26 +230,26 @@ class InkScrollApp {
     }
     if (window.lucide) lucide.createIcons();
 
-    // GSAP Card Grid Stagger Animation
-    if (typeof gsap !== 'undefined') {
-      gsap.killTweensOf('.chapter-card');
-      gsap.from('.chapter-card', {
-        y: 24,
-        opacity: 0,
-        duration: 0.5,
-        ease: 'power3.out',
-        stagger: { each: 0.05, from: 'start' }
-      });
-    }
+    // GSAP Card Grid Stagger Entrance
+    if (window.inkUIFX) window.inkUIFX.animateCardGrid();
   }
 
   async openChapterInReader(chapterData) {
-    this.showView('reader');
-    await window.immersiveReader.loadChapter(chapterData, 0);
+    if (window.inkUIFX) {
+      window.inkUIFX.transitionToReader(async () => {
+        await window.immersiveReader.loadChapter(chapterData, 0);
+      });
+    } else {
+      this.showView('reader');
+      await window.immersiveReader.loadChapter(chapterData, 0);
+    }
   }
 
   // Process Manga Chapter URL Import
   async processUrlImport(url) {
+    const loading = document.getElementById('loading-overlay');
+    if (loading) loading.classList.add('active');
+
     try {
       this.showNotification('Scraping & Processing Manga URL...', 'info');
       const imported = await window.chapterImporter.importFromUrl(url);
@@ -271,6 +277,8 @@ class InkScrollApp {
       this.openChapterInReader(fullChapter);
     } catch (err) {
       alert(`Import failed: ${err.message}`);
+    } finally {
+      if (loading) loading.classList.remove('active');
     }
   }
 

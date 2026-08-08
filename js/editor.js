@@ -140,8 +140,8 @@ class PanelEditor {
   }
 
   drawHandle(x, y) {
-    this.ctx.fillStyle = '#ffffff';
-    this.ctx.strokeStyle = '#dc2626';
+    this.ctx.fillStyle = '#f59e0b';
+    this.ctx.strokeStyle = '#ffffff';
     this.ctx.lineWidth = 2;
     this.ctx.beginPath();
     this.ctx.arc(x, y, 6, 0, Math.PI * 2);

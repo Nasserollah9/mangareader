@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>InkScroll — Immersive Manga Reader</title>
   <meta name="description" content="Cinematic, panel-by-panel manga reading experience with sumi-e ink aesthetics, WebGL zooms, parallax depth, and atmospheric soundscapes.">
-  <!-- Google Fonts -->
+  
+  <!-- Google Fonts: Cinematic Sumi-e Edition -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Outfit:wght@300;500;700&family=Plus+Jakarta+Sans:wght@400;500;600&family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;700&family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;600&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/style.css">
   
@@ -53,18 +54,24 @@
   <main class="view-screen active" id="view-library">
     <div class="library-container">
       
-      <!-- Hero Header & Import Bar -->
+      <!-- 1 & 2. Hero Header & Living Ink + Ember Canvases -->
       <section class="hero-banner">
-        <div class="hero-ambient-bg"></div>
-        <h1 class="hero-title">Step Into Living Ink</h1>
-        <p class="hero-subtitle">Cinematic panel-by-panel manga reading with right-to-left flow, atmospheric soundscapes, and dramatic WebGL zooms.</p>
+        <div class="hero-bg"></div>
+        <canvas id="hero-ink-canvas"></canvas>
+        <canvas id="hero-ember-canvas"></canvas>
         
-        <div class="import-bar">
-          <input type="url" id="hero-url-input" class="import-input" placeholder="Paste manga URL (e.g., https://3asq.online/manga/one-piece/1190/)">
-          <button class="btn-ink btn-ink-primary" id="hero-import-btn">
-            <i data-lucide="sparkles"></i>
-            <span>Compile & Read</span>
-          </button>
+        <div class="hero-content">
+          <h1 class="hero-title">Step Into Living Ink</h1>
+          <p class="hero-subtitle">Cinematic panel-by-panel manga reading with right-to-left flow, atmospheric soundscapes, and dramatic WebGL zooms.</p>
+          
+          <!-- 3. Glassmorphic URL Import Bar -->
+          <div class="import-bar">
+            <input type="url" id="hero-url-input" class="url-input-glass" placeholder="Paste manga URL (e.g., https://3asq.online/manga/one-piece/1190/)">
+            <button class="cta-compile pulsing" id="hero-import-btn">
+              <i data-lucide="sparkles"></i>
+              <span>Compile & Read</span>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -75,7 +82,7 @@
           <span>Compiled Chapters</span>
         </h2>
 
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 12px;">
           <button class="btn-ink" id="btn-load-demo">
             <i data-lucide="flame"></i>
             <span>Play Demo Chapter</span>
@@ -88,7 +95,7 @@
         </div>
       </div>
 
-      <!-- Chapter Grid Cards -->
+      <!-- 4. 3D Interactive Chapter Grid -->
       <div class="chapter-grid" id="chapter-grid">
         <!-- Cards injected dynamically via JS -->
       </div>
@@ -106,155 +113,144 @@
     <!-- Japanese Onomatopoeia SFX & Dialogue Overlay -->
     <div id="sfx-container" class="sfx-overlay-container"></div>
 
-    <!-- Reader Top HUD Bar -->
+    <!-- 5. Floating Top Control Bar (Reader HUD) -->
     <header class="reader-hud-top" id="reader-hud">
-      <div style="display: flex; align-items: center; gap: 16px;">
-        <button class="btn-ink" id="btn-exit-reader">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button class="hud-icon-btn" id="btn-exit-reader">
           <i data-lucide="arrow-left"></i>
-          <span>Library</span>
+          <span class="tooltip">Exit to Library</span>
         </button>
         <span class="reader-chapter-title" id="reader-title">Loading Chapter...</span>
       </div>
 
-      <div class="reader-controls">
-        <button class="btn-ink" id="btn-toggle-autoscroll" data-tooltip="Auto-Scroll [Space]">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button class="hud-icon-btn" id="btn-toggle-autoscroll">
           <i data-lucide="play" id="icon-autoscroll"></i>
-          <span id="label-autoscroll">Auto-Scroll</span>
+          <span class="tooltip" id="label-autoscroll">Auto-Scroll [Space]</span>
         </button>
 
-        <button class="btn-ink" id="btn-toggle-audio" data-tooltip="Ambient Audio">
+        <button class="hud-icon-btn" id="btn-toggle-audio">
           <i data-lucide="volume-2" id="icon-audio"></i>
+          <span class="tooltip">Ambient Audio</span>
         </button>
 
-        <button class="btn-ink" id="btn-open-editor" data-tooltip="Panel Editor">
+        <button class="hud-icon-btn" id="btn-open-editor">
           <i data-lucide="crop"></i>
-          <span>Edit Panels</span>
+          <span class="tooltip">Edit Panel Boundaries</span>
         </button>
 
-        <button class="btn-ink" id="btn-toggle-fullscreen" data-tooltip="Fullscreen [F]">
+        <button class="hud-icon-btn" id="btn-toggle-fullscreen">
           <i data-lucide="maximize"></i>
+          <span class="tooltip">Fullscreen [F]</span>
         </button>
       </div>
     </header>
 
-    <!-- Ink-Wash Page Boundary Transition & Loading Overlay -->
+    <!-- Page Boundary Curtain Overlay -->
     <div id="ink-curtain-overlay" class="ink-curtain-overlay"></div>
-    <div id="sumie-spotlight-ring" class="sumie-spotlight-ring"></div>
 
-    <!-- Bottom Right Panel Counter & Navigation Badge -->
-    <div id="panel-counter-badge" class="panel-counter-badge">
-      <span id="panel-counter-text">Panel 1 / 1</span>
-      <span class="ghost-hint-text" id="ghost-hint-text">Click or Space →</span>
+    <!-- 6. Panel Counter Badge -->
+    <div id="panel-counter-badge" class="panel-counter">
+      <span id="panel-counter-text">
+        <span class="current" id="counter-current">1</span>
+        <span class="separator">/</span>
+        <span id="counter-total">1</span>
+      </span>
     </div>
 
-    <!-- Bottom Progress Line -->
-    <div class="reader-progress-line">
+    <!-- 7. Bottom Progress Line -->
+    <div class="reader-progress-container">
       <div class="reader-progress-fill" id="reader-progress-fill"></div>
     </div>
   </section>
 
-  <!-- Modal: Chapter Completed Screen -->
+  <!-- 10. Ink Splash Loading Overlay -->
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="loading-ink"></div>
+    <div class="loading-text" id="loading-text">Compiling Living Ink...</div>
+  </div>
+
+  <!-- 8 & 9. Modal: Chapter Completed Screen -->
   <div class="modal-overlay" id="modal-chapter-complete">
-    <div class="modal-window" style="max-width: 480px; text-align: center;">
-      <div style="margin-bottom: 16px;">
-        <div class="brand-stamp" style="width: 56px; height: 56px; font-size: 1.8rem; margin: 0 auto 16px;">墨</div>
-        <h3 class="modal-title" style="font-size: 1.8rem;">Chapter Completed</h3>
-        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 8px;">You have finished reading this chapter in InkScroll cinematic mode.</p>
-      </div>
-      <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
-        <button class="btn-ink" id="btn-complete-reread">
-          <i data-lucide="rotate-ccw"></i>
-          <span>Re-read Chapter</span>
-        </button>
-        <button class="btn-ink btn-ink-primary" id="btn-complete-main">
+    <div class="modal-content" style="max-width: 480px; text-align: center; align-items: center;">
+      <div class="brand-stamp" style="width: 56px; height: 56px; font-size: 1.8rem; margin-bottom: 16px;">墨</div>
+      <h2 class="modal-title" style="margin-bottom: 8px;">Chapter Complete</h2>
+      <p style="color: var(--text-grey); font-size: 0.95rem; margin-bottom: 24px;" id="chapter-complete-msg">You have reached the end of this chapter.</p>
+
+      <div style="display: flex; gap: 12px; width: 100%; justify-content: center;">
+        <button class="btn-ink" id="btn-complete-main">
           <i data-lucide="home"></i>
-          <span>Main Page</span>
+          <span>Library</span>
+        </button>
+        <button class="btn-ink btn-ink-primary" id="btn-complete-reread">
+          <i data-lucide="rotate-ccw"></i>
+          <span>Re-read</span>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Modal 1: Import Modal -->
-  <div class="modal-overlay" id="modal-import">
-    <div class="modal-window" style="max-width: 600px;">
-      <div class="modal-header">
-        <h3 class="modal-title">Import Manga Chapter</h3>
-        <button class="btn-ink" id="btn-close-import"><i data-lucide="x"></i></button>
-      </div>
-      <div class="modal-body" style="flex-direction: column;">
-        <label class="setting-label">Option 1: Paste Manga URL</label>
-        <input type="url" id="import-modal-url" class="import-input" placeholder="https://3asq.online/manga/one-piece/1190/">
-        
-        <label class="setting-label" style="margin-top: 16px;">Option 2: Direct Image URLs (comma/newline separated)</label>
-        <textarea id="import-modal-urls" class="import-input" style="height: 90px; resize: vertical;" placeholder="https://domain.com/p1.jpg&#10;https://domain.com/p2.jpg"></textarea>
-        
-        <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 12px;">
-          <button class="btn-ink" id="btn-cancel-import">Cancel</button>
-          <button class="btn-ink btn-ink-primary" id="btn-submit-import">Start Processing</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal 2: Bounding Box Visual Panel Editor -->
+  <!-- 9. Modal: Bounding Box Visual Panel Editor -->
   <div class="modal-overlay" id="modal-editor">
-    <div class="modal-window">
+    <div class="modal-content" style="max-width: 1080px;">
       <div class="modal-header">
-        <h3 class="modal-title">Manga Panel Boundary & Reading Order Editor</h3>
-        <div style="display: flex; gap: 10px;">
-          <button class="btn-ink" id="btn-editor-auto-detect"><i data-lucide="wand-2"></i> Re-Detect</button>
-          <button class="btn-ink btn-ink-primary" id="btn-editor-save"><i data-lucide="check"></i> Save Panels</button>
-          <button class="btn-ink" id="btn-editor-close"><i data-lucide="x"></i></button>
-        </div>
+        <h2 class="modal-title">Visual Panel Boundary Editor</h2>
+        <button class="btn-ink" id="btn-close-editor"><i data-lucide="x"></i></button>
       </div>
       <div class="modal-body">
-        <div class="editor-canvas-container" id="editor-canvas-wrap">
+        <div class="editor-workspace" id="editor-workspace">
           <canvas id="editor-canvas"></canvas>
         </div>
+
         <div class="editor-sidebar">
-          <h4 style="font-family: var(--font-serif); font-size: 1rem;">Detected Panels</h4>
-          <p style="font-size: 0.8rem; color: var(--text-muted);">Manga reading order: Right-to-Left, Top-to-Bottom.</p>
-          <div id="editor-panel-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
-            <!-- Panels listed dynamically -->
-          </div>
-          <div class="setting-row">
-            <span class="setting-label">Atmospheric Scene Mood</span>
-            <select id="editor-mood-select" class="setting-select">
-              <option value="calm">Calm (Cherry Blossoms / Wind)</option>
-              <option value="action" selected>Action (Rain & Screen Shake)</option>
-              <option value="dramatic">Dramatic (Thunder Storm)</option>
-              <option value="mysterious">Mysterious (Dust Particles)</option>
+          <button class="btn-ink btn-ink-primary" id="btn-editor-auto-detect" style="width: 100%; justify-content: center;">
+            <i data-lucide="wand-2"></i>
+            <span>Re-Detect Panels</span>
+          </button>
+
+          <div style="background: rgba(255,255,255,0.03); padding: 16px; border-radius: 10px; border: 1px solid var(--ink-border);">
+            <span style="font-size: 0.85rem; color: var(--text-grey); font-weight: 500;">Atmospheric Scene Mood</span>
+            <select id="editor-mood-select" class="setting-select" style="width: 100%; margin-top: 8px;">
+              <option value="none">Standard Clean</option>
+              <option value="rain">Action Heavy Rain</option>
+              <option value="dust">Floating Sumi-e Embers</option>
+              <option value="fog">Atmospheric Smoke</option>
             </select>
           </div>
+
+          <div id="editor-panel-list" style="display: flex; flex-direction: column; gap: 8px; overflow-y: auto; max-height: 240px;">
+            <!-- Panels listed here -->
+          </div>
+
+          <button class="btn-ink btn-ink-primary" id="btn-editor-save" style="width: 100%; justify-content: center; margin-top: auto;">
+            <i data-lucide="save"></i>
+            <span>Save Boundaries</span>
+          </button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Settings Drawer -->
-  <div class="settings-drawer" id="settings-drawer">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+  <div class="settings-drawer" id="settings-drawer" style="position: fixed; top: 0; right: -340px; width: 340px; height: 100vh; background: var(--bg-surface); backdrop-filter: blur(20px); border-left: 1px solid var(--ink-border); z-index: 250; transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1); padding: 24px; display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--ink-border); padding-bottom: 16px;">
       <h3 style="font-family: var(--font-serif); font-size: 1.2rem;">Reader Settings</h3>
       <button class="btn-ink" id="btn-close-settings"><i data-lucide="x"></i></button>
     </div>
 
     <div class="setting-row">
-      <span class="setting-label">Reading Direction</span>
-      <select id="setting-direction" class="setting-select">
-        <option value="rtl" selected>Right-to-Left (Authentic Manga)</option>
-        <option value="ltr">Left-to-Right (Western Comic)</option>
+      <span class="setting-label">Atmospheric Soundscapes</span>
+      <select id="setting-bg-audio" class="setting-select">
+        <option value="samurai">Edo Rain & Wind Chimes</option>
+        <option value="lofi">Lofi Sumi-e Beats</option>
+        <option value="off">Mute Audio</option>
       </select>
     </div>
 
     <div class="setting-row">
-      <span class="setting-label">Auto-Scroll Speed</span>
-      <input type="range" id="setting-scroll-speed" class="setting-range" min="1" max="10" value="5">
-    </div>
-
-    <div class="setting-row">
-      <span class="setting-label">Visual Effects Intensity</span>
+      <span class="setting-label">Camera Motion Intensity</span>
       <select id="setting-fx-intensity" class="setting-select">
-        <option value="cinematic" selected>Cinematic (Zoom + Parallax + Particles)</option>
+        <option value="cinematic" selected>Cinematic (Zoom + Parallax + Embers)</option>
         <option value="subtle">Subtle (Light Zoom)</option>
         <option value="none">Reduced Motion (Flat)</option>
       </select>

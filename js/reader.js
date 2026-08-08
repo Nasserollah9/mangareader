@@ -246,11 +246,14 @@ class ImmersiveReader {
     const current = index + 1;
     const progress = Math.round((current / total) * 100);
 
-    const counterText = document.getElementById('panel-counter-text');
-    if (counterText && window.inkUIFX) {
-      window.inkUIFX.triggerCounterTick(counterText, `Panel ${current} / ${total}`);
-    } else if (counterText) {
-      counterText.textContent = `Panel ${current} / ${total}`;
+    const curEl = document.getElementById('counter-current');
+    const totEl = document.getElementById('counter-total');
+    if (curEl && totEl) {
+      curEl.textContent = current;
+      totEl.textContent = total;
+    } else {
+      const counterText = document.getElementById('panel-counter-text');
+      if (counterText) counterText.textContent = `${current} / ${total}`;
     }
 
     const fill = document.getElementById('reader-progress-fill');
