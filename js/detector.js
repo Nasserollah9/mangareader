@@ -138,16 +138,31 @@ class MangaPanelDetector {
         mergedBoxes.push(box);
       }
 
-      // Fallback: If projection profile found 0 panels
-      if (mergedBoxes.length === 0) {
-        mergedBoxes.push({ x: 0, y: 0, w: 1, h: 1 });
+      // Check if any detected panel box covers near-full page dimensions (splash page / full-page panel)
+      const hasFullPagePanel = mergedBoxes.some(b => b.w >= 0.75 && b.h >= 0.75);
+
+      // Fallback: If near-full page panel detected or 0 panels found, treat as 1 single full-page panel
+      if (hasFullPagePanel || mergedBoxes.length === 0) {
+        return [{
+          id: `p_${page.index}_0_${Date.now()}`,
+          chapterId: page.chapterId || '',
+          pageIndex: page.index,
+          bounds: { x: 0, y: 0, w: 1, h: 1 },
+          type: 'fullbleed',
+          effects: { atmosphere: 'rain', shake: false, zoomLevel: 1.0 }
+        }];
       }
 
       return mergedBoxes.map((b, idx) => ({
         id: `p_${page.index}_${idx}_${Date.now()}`,
         chapterId: page.chapterId || '',
         pageIndex: page.index,
-        bounds: b,
+        bounds: {
+          x: Math.max(0, Math.min(1, b.x)),
+          y: Math.max(0, Math.min(1, b.y)),
+          w: Math.max(0.05, Math.min(1, b.w)),
+          h: Math.max(0.05, Math.min(1, b.h))
+        },
         type: (b.w > 0.85 && b.h > 0.85) ? 'fullbleed' : (b.w > 0.70 ? 'spread' : 'panel'),
         effects: {
           atmosphere: 'rain',

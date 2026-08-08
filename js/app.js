@@ -115,22 +115,29 @@ class InkScrollApp {
       document.getElementById('settings-drawer').classList.remove('open');
     });
 
+    // Chapter Complete Modal Buttons
+    const btnCompleteMain = document.getElementById('btn-complete-main');
+    if (btnCompleteMain) {
+      btnCompleteMain.addEventListener('click', () => window.immersiveReader.exitReader());
+    }
+
+    const btnCompleteReread = document.getElementById('btn-complete-reread');
+    if (btnCompleteReread) {
+      btnCompleteReread.addEventListener('click', () => window.immersiveReader.rereadChapter());
+    }
+
     // Global Keybindings (Arrow Keys, ESC, F, Space)
     window.addEventListener('keydown', (e) => {
       const readerActive = document.getElementById('view-reader').classList.contains('active');
       if (!readerActive) return;
 
-      if (e.key === 'ArrowDown') {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
         window.immersiveReader.nextPanel();
-      } else if (e.key === 'ArrowUp') {
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
         window.immersiveReader.prevPanel();
-      } else if (e.key === 'ArrowRight') {
-        window.immersiveReader.nudgeCamera('right');
-      } else if (e.key === 'ArrowLeft') {
-        window.immersiveReader.nudgeCamera('left');
       } else if (e.key === ' ') {
         e.preventDefault();
-        window.immersiveReader.toggleAutoScroll();
+        window.immersiveReader.nextPanel();
       } else if (e.key === 'Escape') {
         window.immersiveReader.exitReader();
       } else if (e.key === 'f' || e.key === 'F') {

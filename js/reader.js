@@ -141,81 +141,125 @@ class ImmersiveReader {
 
   navigateToPanel(index, duration = 0.6) {
     if (index < 0 || index >= this.panels.length) return;
+
+    const previousPanel = this.panels[this.currentPanelIndex];
     this.currentPanelIndex = index;
+    const targetPanel = this.panels[index];
 
-    const panel = this.panels[index];
-    const page = this.pages.find(p => p.index === panel.pageIndex);
-    const mesh = this.pageMeshes.get(panel.pageIndex);
+    const page = this.pages.find(p => p.index === targetPanel.pageIndex);
+    const mesh = this.pageMeshes.get(targetPanel.pageIndex);
+    if (!mesh || !page) return;
 
-    // Hide neighboring pages so zero adjacent page artwork peeks out in margins!
-    for (let [pIndex, m] of this.pageMeshes.entries()) {
-      m.visible = (pIndex === panel.pageIndex);
-    }
+    // Interrupt any active in-flight GSAP tweens so fast user clicks/taps never freeze or stack!
+    if (this.camera) gsap.killTweensOf(this.camera);
+    if (this.baseCameraPos) gsap.killTweensOf(this.baseCameraPos);
 
-    // Calculate target camera position and precise orthographic zoom bounds
-    const pageAspect = page.width / page.height;
-    const meshW = 2 * pageAspect;
-    const meshH = 2;
-    const screenAspect = window.innerWidth / window.innerHeight;
+    const isCrossPage = previousPanel && (previousPanel.pageIndex !== targetPanel.pageIndex);
+    const curtain = document.getElementById('ink-curtain-overlay');
 
-    // Panel center bounds mapped to world coordinates
-    const targetX = mesh.position.x - meshW / 2 + (panel.bounds.x + panel.bounds.w / 2) * meshW;
-    const targetY = mesh.position.y + meshH / 2 - (panel.bounds.y + panel.bounds.h / 2) * meshH;
+    const performCameraSwapAndPan = () => {
+      // Hide neighboring pages so zero adjacent page artwork peeks out in margins!
+      for (let [pIndex, m] of this.pageMeshes.entries()) {
+        m.visible = (pIndex === targetPanel.pageIndex);
+      }
 
-    // Smart margin padding (95% fill for large panels, 85% for normal panels)
-    const isTallPanel = panel.bounds.h > 0.60;
-    const isWidePanel = panel.bounds.w > 0.60;
-    const padding = (isTallPanel || isWidePanel) ? 0.95 : 0.85;
+      // Calculate target camera position and precise orthographic zoom bounds
+      const pageAspect = page.width / page.height;
+      const meshW = 2 * pageAspect;
+      const meshH = 2;
+      const screenAspect = window.innerWidth / window.innerHeight;
 
-    const fitH = (1 / Math.max(0.08, panel.bounds.h)) * padding;
-    const fitW = (screenAspect / (Math.max(0.08, panel.bounds.w) * pageAspect)) * padding;
+      // Panel center bounds mapped to world coordinates
+      const targetX = mesh.position.x - meshW / 2 + (targetPanel.bounds.x + targetPanel.bounds.w / 2) * meshW;
+      const targetY = mesh.position.y + meshH / 2 - (targetPanel.bounds.y + targetPanel.bounds.h / 2) * meshH;
 
-    // Cap max zoom so tall panels never over-zoom or cut off top/bottom content
-    let targetZoom = Math.min(fitH, fitW);
-    if (isTallPanel) {
-      targetZoom = Math.min(targetZoom, (1 / panel.bounds.h) * 0.95);
+      // Smart margin padding (95% fill for large/tall panels, 85% for normal panels)
+      const isTallPanel = targetPanel.bounds.h > 0.60;
+      const isWidePanel = targetPanel.bounds.w > 0.60;
+      const padding = (isTallPanel || isWidePanel) ? 0.95 : 0.85;
+
+      const fitH = (1 / Math.max(0.08, targetPanel.bounds.h)) * padding;
+      const fitW = (screenAspect / (Math.max(0.08, targetPanel.bounds.w) * pageAspect)) * padding;
+
+      let targetZoom = Math.min(fitH, fitW);
+      if (isTallPanel) {
+        targetZoom = Math.min(targetZoom, (1 / targetPanel.bounds.h) * 0.95);
+      } else {
+        targetZoom = Math.min(targetZoom, 1.65);
+      }
+
+      // Play subtle transition sound
+      if (window.inkAudio) window.inkAudio.playPanelTransition();
+
+      // Direction-Aware Motion & Camera Pan
+      if (!this.baseCameraPos) this.baseCameraPos = { x: targetX, y: targetY };
+
+      gsap.to(this.baseCameraPos, {
+        x: targetX,
+        y: targetY,
+        duration: duration,
+        ease: "power2.out"
+      });
+
+      // Subtle Entry Zoom Settling Effect (Cinematic Ease-In)
+      const entryZoom = targetZoom * 1.04;
+      gsap.to(this.camera, {
+        zoom: entryZoom,
+        duration: duration * 0.6,
+        ease: "power2.out",
+        onUpdate: () => this.camera.updateProjectionMatrix(),
+        onComplete: () => {
+          gsap.to(this.camera, {
+            zoom: targetZoom,
+            duration: duration * 0.4,
+            ease: "power1.inOut",
+            onUpdate: () => this.camera.updateProjectionMatrix()
+          });
+        }
+      });
+
+      // Update UI Progress & Panel Counter Badge
+      this.updateProgressUI(index);
+
+      // Render SFX overlay
+      this.renderPanelSFX(targetPanel);
+    };
+
+    if (isCrossPage && curtain) {
+      curtain.classList.add('active');
+      setTimeout(() => {
+        performCameraSwapAndPan();
+        setTimeout(() => {
+          curtain.classList.remove('active');
+        }, 150);
+      }, 150);
     } else {
-      targetZoom = Math.min(targetZoom, 1.65);
+      performCameraSwapAndPan();
     }
+  }
 
-    // Play subtle transition sound
-    if (window.inkAudio) window.inkAudio.playPanelTransition();
+  updateProgressUI(index) {
+    const total = this.panels.length;
+    const current = index + 1;
+    const progress = Math.round((current / total) * 100);
 
-    // Animate base camera position smoothly (No dizzy rotation or infinite drift)
-    if (!this.baseCameraPos) this.baseCameraPos = { x: targetX, y: targetY };
+    const counterText = document.getElementById('panel-counter-text');
+    if (counterText) counterText.textContent = `Panel ${current} / ${total}`;
 
-    gsap.to(this.baseCameraPos, {
-      x: targetX,
-      y: targetY,
-      duration: duration,
-      ease: "power2.out"
-    });
+    const fill = document.getElementById('reader-progress-fill');
+    if (fill) fill.style.width = `${progress}%`;
 
-    gsap.to(this.camera, {
-      zoom: targetZoom,
-      duration: duration,
-      ease: "power2.out",
-      onUpdate: () => this.camera.updateProjectionMatrix()
-    });
-
-    // Update Progress UI
-    const progress = Math.round(((index + 1) / this.panels.length) * 100);
-    document.getElementById('reader-progress-fill').style.width = `${progress}%`;
-    if (window.inkStorage) {
-      window.inkStorage.updateProgress(this.chapter.id, progress, panel.id);
+    if (window.inkStorage && this.chapter && this.panels[index]) {
+      window.inkStorage.updateProgress(this.chapter.id, progress, this.panels[index].id);
     }
-
-    // Render SFX and reading direction path
-    this.renderPanelSFX(panel);
-    this.renderReadingPath(index);
   }
 
   nextPanel() {
     if (this.currentPanelIndex < this.panels.length - 1) {
       this.navigateToPanel(this.currentPanelIndex + 1);
     } else {
-      // Chapter finished -> Exit reader
-      this.exitReader();
+      // Trigger Chapter Complete Flow
+      this.showChapterCompleteModal();
     }
   }
 
@@ -223,6 +267,21 @@ class ImmersiveReader {
     if (this.currentPanelIndex > 0) {
       this.navigateToPanel(this.currentPanelIndex - 1);
     }
+  }
+
+  showChapterCompleteModal() {
+    const modal = document.getElementById('modal-chapter-complete');
+    if (modal) modal.classList.add('active');
+  }
+
+  hideChapterCompleteModal() {
+    const modal = document.getElementById('modal-chapter-complete');
+    if (modal) modal.classList.remove('active');
+  }
+
+  rereadChapter() {
+    this.hideChapterCompleteModal();
+    this.navigateToPanel(0, 0);
   }
 
   nudgeCamera(dir) {

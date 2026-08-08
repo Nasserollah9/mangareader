@@ -131,11 +131,41 @@
       </div>
     </header>
 
+    <!-- Ink-Wash Page Boundary Transition & Loading Overlay -->
+    <div id="ink-curtain-overlay" class="ink-curtain-overlay"></div>
+
+    <!-- Bottom Right Panel Counter & Navigation Badge -->
+    <div id="panel-counter-badge" class="panel-counter-badge">
+      <span id="panel-counter-text">Panel 1 / 1</span>
+      <span class="ghost-hint-text" id="ghost-hint-text">Click or Space →</span>
+    </div>
+
     <!-- Bottom Progress Line -->
     <div class="reader-progress-line">
       <div class="reader-progress-fill" id="reader-progress-fill"></div>
     </div>
   </section>
+
+  <!-- Modal: Chapter Completed Screen -->
+  <div class="modal-overlay" id="modal-chapter-complete">
+    <div class="modal-window" style="max-width: 480px; text-align: center;">
+      <div style="margin-bottom: 16px;">
+        <div class="brand-stamp" style="width: 56px; height: 56px; font-size: 1.8rem; margin: 0 auto 16px;">墨</div>
+        <h3 class="modal-title" style="font-size: 1.8rem;">Chapter Completed</h3>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 8px;">You have finished reading this chapter in InkScroll cinematic mode.</p>
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
+        <button class="btn-ink" id="btn-complete-reread">
+          <i data-lucide="rotate-ccw"></i>
+          <span>Re-read Chapter</span>
+        </button>
+        <button class="btn-ink btn-ink-primary" id="btn-complete-main">
+          <i data-lucide="home"></i>
+          <span>Main Page</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal 1: Import Modal -->
   <div class="modal-overlay" id="modal-import">

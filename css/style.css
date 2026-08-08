@@ -638,3 +638,49 @@ html, body {
   font-size: 0.9rem;
   outline: none;
 }
+
+/* Ink-Wash Curtain Overlay (Page Boundary Fade Effect) */
+.ink-curtain-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #050508;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.25s ease-out;
+}
+
+.ink-curtain-overlay.active {
+  opacity: 1;
+}
+
+/* Bottom Right Panel Counter & Navigation Badge */
+.panel-counter-badge {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: rgba(14, 14, 18, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-ink-light);
+  border-radius: 20px;
+  z-index: 10;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.ghost-hint-text {
+  color: var(--text-dim);
+  font-weight: 400;
+  font-size: 0.8rem;
+  border-left: 1px solid var(--border-ink);
+  padding-left: 10px;
+}
