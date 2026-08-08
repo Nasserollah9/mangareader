@@ -163,13 +163,20 @@ class ImmersiveReader {
     const targetY = mesh.position.y + meshH / 2 - (panel.bounds.y + panel.bounds.h / 2) * meshH;
 
     // Smart margin padding (95% fill for large panels, 85% for normal panels)
-    const isLargePanel = (panel.bounds.w > 0.65 || panel.bounds.h > 0.65);
-    const padding = isLargePanel ? 0.95 : 0.85;
+    const isTallPanel = panel.bounds.h > 0.60;
+    const isWidePanel = panel.bounds.w > 0.60;
+    const padding = (isTallPanel || isWidePanel) ? 0.95 : 0.85;
+
     const fitH = (1 / Math.max(0.08, panel.bounds.h)) * padding;
     const fitW = (screenAspect / (Math.max(0.08, panel.bounds.w) * pageAspect)) * padding;
 
-    // Cap max zoom so panels never over-zoom or cut off text bubbles
-    const targetZoom = Math.min(fitH, fitW, isLargePanel ? 1.40 : 1.65);
+    // Cap max zoom so tall panels never over-zoom or cut off top/bottom content
+    let targetZoom = Math.min(fitH, fitW);
+    if (isTallPanel) {
+      targetZoom = Math.min(targetZoom, (1 / panel.bounds.h) * 0.95);
+    } else {
+      targetZoom = Math.min(targetZoom, 1.65);
+    }
 
     // Play subtle transition sound
     if (window.inkAudio) window.inkAudio.playPanelTransition();

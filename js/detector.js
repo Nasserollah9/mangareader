@@ -112,12 +112,38 @@ class MangaPanelDetector {
         }
       }
 
-      // Fallback: If projection profile found 0 panels or a full-spread page
-      if (detectedBoxes.length === 0) {
-        detectedBoxes.push({ x: 0, y: 0, w: 1, h: 1 });
+      // Merge vertically stacked panel boxes in the same column if they form a single tall panel
+      const mergedBoxes = [];
+      const usedIndexes = new Set();
+
+      for (let i = 0; i < detectedBoxes.length; i++) {
+        if (usedIndexes.has(i)) continue;
+        let box = { ...detectedBoxes[i] };
+
+        for (let j = i + 1; j < detectedBoxes.length; j++) {
+          if (usedIndexes.has(j)) continue;
+          const other = detectedBoxes[j];
+
+          const sameColumn = Math.abs(box.x - other.x) < 0.06 && Math.abs(box.w - other.w) < 0.06;
+          const verticallyAdjacent = Math.abs((box.y + box.h) - other.y) < 0.08 || Math.abs((other.y + other.h) - box.y) < 0.08;
+
+          if (sameColumn && verticallyAdjacent) {
+            const minY = Math.min(box.y, other.y);
+            const maxY = Math.max(box.y + box.h, other.y + other.h);
+            box.y = minY;
+            box.h = maxY - minY;
+            usedIndexes.add(j);
+          }
+        }
+        mergedBoxes.push(box);
       }
 
-      return detectedBoxes.map((b, idx) => ({
+      // Fallback: If projection profile found 0 panels
+      if (mergedBoxes.length === 0) {
+        mergedBoxes.push({ x: 0, y: 0, w: 1, h: 1 });
+      }
+
+      return mergedBoxes.map((b, idx) => ({
         id: `p_${page.index}_${idx}_${Date.now()}`,
         chapterId: page.chapterId || '',
         pageIndex: page.index,
