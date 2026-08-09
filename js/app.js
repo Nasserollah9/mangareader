@@ -463,20 +463,16 @@ class InkScrollApp {
       this.showNotification('Scraping Manga Series & Chapter Directory...', 'info');
 
       let result;
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        const resp = await fetch('/api/scrape-series', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url })
-        });
-        if (!resp.ok) {
-          const errData = await resp.json().catch(() => ({}));
-          throw new Error(errData.error || 'Series scrape request failed');
-        }
-        result = await resp.json();
-      } else {
-        throw new Error('Series scraping requires python backend server running');
+      const resp = await fetch('/api/scrape-series', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        throw new Error(errData.error || 'Series scrape request failed');
       }
+      result = await resp.json();
 
       if (!result.chapters || result.chapters.length === 0) {
         throw new Error('No chapters found on series page');

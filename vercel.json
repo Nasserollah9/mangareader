@@ -2,6 +2,7 @@
   "version": 2,
   "rewrites": [
     { "source": "/api/scrape", "destination": "/api/scrape.py" },
+    { "source": "/api/scrape-series", "destination": "/api/scrape-series.py" },
     { "source": "/api/proxy", "destination": "/api/proxy.py" }
   ]
 }
