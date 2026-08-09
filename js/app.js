@@ -333,23 +333,30 @@ class InkScrollApp {
     if (sHeader) sHeader.style.display = 'block';
     sGrid.style.display = 'grid';
 
+    const compiledChapters = await window.inkStorage.getAllChapters();
+    const compiledUrlSet = new Set(compiledChapters.map(c => c.sourceUrl).filter(Boolean));
+
     for (let s of allSeries) {
       const card = document.createElement('div');
       card.className = 'series-card';
       card.style.cssText = 'background: var(--bg-surface); border: 1px solid var(--ink-border); border-radius: 12px; overflow: hidden; cursor: pointer; position: relative; transition: all 0.3s ease; display: flex; flex-direction: column;';
 
       const proxiedCover = s.coverUrl ? `/api/proxy?url=${encodeURIComponent(s.coverUrl)}` : '';
+      const compiledCount = (s.chapters || []).filter(c => compiledUrlSet.has(c.url)).length;
 
       card.innerHTML = `
         <div style="width: 100%; height: 260px; background-size: cover; background-position: center; background-image: url('${proxiedCover}'); background-color: #12121a; position: relative;">
-          <span style="position: absolute; top: 10px; right: 10px; background: rgba(124, 58, 237, 0.9); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;">SERIES</span>
+          <span style="position: absolute; top: 10px; right: 10px; background: rgba(124, 58, 237, 0.9); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;">COMPILED MANGA</span>
           <button class="series-delete-btn" title="Delete Series" style="position: absolute; top: 10px; left: 10px; background: rgba(220, 38, 38, 0.9); border: none; color: white; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10;">
             <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
           </button>
         </div>
         <div style="padding: 16px; display: flex; flex-direction: column; gap: 6px; flex: 1;">
           <div style="font-family: var(--font-serif); font-weight: 700; font-size: 1.05rem; color: var(--text-white); line-height: 1.3;">${s.title}</div>
-          <div style="font-size: 0.8rem; color: var(--text-grey);">${s.chapters?.length || 0} Chapters</div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
+            <span style="font-size: 0.82rem; color: #10b981; font-weight: 600;">${compiledCount} Compiled</span>
+            <span style="font-size: 0.8rem; color: var(--text-grey);">${s.chapters?.length || 0} Total</span>
+          </div>
         </div>
       `;
 
