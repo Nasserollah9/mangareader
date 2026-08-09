@@ -35,13 +35,15 @@ class InkScrollApp {
   }
 
   bindEvents() {
-    // Brand Click -> Return to Landing Start Screen
+    // Brand Click -> Return to Library (if in reader, clean up first)
     this.on('nav-brand', 'click', () => {
       const readerActive = document.getElementById('view-reader')?.classList.contains('active');
       if (readerActive && window.immersiveReader) {
         window.immersiveReader.exitReader();
+      } else {
+        this.showView('library');
+        this.loadLibraryGrid();
       }
-      this.showView('landing');
     });
     this.on('btn-exit-reader', 'click', () => window.immersiveReader.exitReader());
 
@@ -50,11 +52,6 @@ class InkScrollApp {
     this.on('btn-close-import', 'click', () => this.closeImportModal());
     this.on('btn-cancel-import', 'click', () => this.closeImportModal());
     this.on('btn-submit-import', 'click', () => this.handleModalImport());
-
-    // START READING Button -> Switch to Library View
-    this.on('hero-start-reading-btn', 'click', () => {
-      this.showView('library');
-    });
 
     // Hero URL Import Bar
     this.on('hero-import-btn', 'click', () => {
@@ -222,14 +219,18 @@ class InkScrollApp {
           <div class="card-thumb-wrapper">
             <div class="card-thumb" style="background-image: url('${coverUrl}')"></div>
             <span class="card-stamp ${badgeClass}">${ch.sourceType.toUpperCase()}</span>
-            <button class="card-delete-btn" title="Delete Chapter"><i data-lucide="trash-2"></i></button>
             <div class="chapter-card-overlay">
               <div class="play-button"><i data-lucide="play"></i></div>
             </div>
           </div>
           <div class="card-body">
-            <div class="card-title">${ch.title}</div>
-            <div class="card-meta" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+              <div class="card-title" style="flex: 1;">${ch.title}</div>
+              <button class="card-delete-btn" title="Delete Chapter" style="position: static; flex-shrink: 0; min-width: 32px; height: 32px; background: rgba(220, 38, 38, 0.2); border: 1px solid rgba(220, 38, 38, 0.4); color: #f87171; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease;">
+                <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
+              </button>
+            </div>
+            <div class="card-meta" style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
               <span>${fullData?.pages.length || 0} Pages · ${fullData?.panels.length || 0} Zones</span>
               ${ch.sourceUrl && ch.sourceUrl.startsWith('http') ? `
                 <button class="card-copy-btn" title="Copy Source URL" style="background: rgba(255,255,255,0.08); border: 1px solid var(--ink-border); color: var(--text-white); padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 4px;">
@@ -442,35 +443,19 @@ class InkScrollApp {
   }
 
   showView(viewName) {
-    const landingView = document.getElementById('view-landing');
     const libView = document.getElementById('view-library');
     const rdrView = document.getElementById('view-reader');
     const modalComplete = document.getElementById('modal-chapter-complete');
 
     if (modalComplete) modalComplete.classList.remove('active');
 
-    const hideAll = () => {
-      [landingView, libView, rdrView].forEach(v => {
-        if (v) {
-          v.classList.remove('active');
-          v.classList.add('hidden');
-          v.style.display = 'none';
-          v.style.opacity = '0';
-        }
-      });
-    };
-
-    if (viewName === 'landing' || viewName === 'start') {
-      hideAll();
-      if (landingView) {
-        landingView.classList.remove('hidden');
-        landingView.classList.add('active');
-        landingView.style.display = 'flex';
-        landingView.style.opacity = '1';
+    if (viewName === 'library' || viewName === 'main') {
+      if (rdrView) {
+        rdrView.classList.remove('active');
+        rdrView.classList.add('hidden');
+        rdrView.style.display = 'none';
+        rdrView.style.opacity = '0';
       }
-      this.currentView = 'landing';
-    } else if (viewName === 'library' || viewName === 'main') {
-      hideAll();
       if (libView) {
         libView.classList.remove('hidden');
         libView.classList.add('active');
@@ -484,7 +469,12 @@ class InkScrollApp {
       this.loadLibraryGrid();
       this.currentView = 'library';
     } else if (viewName === 'reader') {
-      hideAll();
+      if (libView) {
+        libView.classList.remove('active');
+        libView.classList.add('hidden');
+        libView.style.display = 'none';
+        libView.style.opacity = '0';
+      }
       if (rdrView) {
         rdrView.classList.remove('hidden');
         rdrView.classList.add('active');
