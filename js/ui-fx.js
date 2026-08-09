@@ -352,12 +352,19 @@ class InkUIFX {
         duration: 0.4,
         ease: 'power2.in',
         onComplete: () => {
-          document.getElementById('view-reader').classList.add('hidden');
-          document.getElementById('view-reader').classList.remove('active');
+          const readerView = document.getElementById('view-reader');
+          if (readerView) {
+            readerView.classList.add('hidden');
+            readerView.classList.remove('active');
+            readerView.style.display = 'none';
+          }
 
           const libView = document.getElementById('view-library');
-          libView.classList.remove('hidden');
-          libView.classList.add('active');
+          if (libView) {
+            libView.classList.remove('hidden');
+            libView.classList.add('active');
+            libView.style.display = 'flex';
+          }
 
           gsap.fromTo('#view-library',
             { opacity: 0, y: -30 },
@@ -369,8 +376,10 @@ class InkUIFX {
         }
       });
     } else {
-      document.getElementById('view-reader').classList.add('hidden');
-      document.getElementById('view-library').classList.remove('hidden');
+      const readerView = document.getElementById('view-reader');
+      const libView = document.getElementById('view-library');
+      if (readerView) { readerView.classList.add('hidden'); readerView.style.display = 'none'; }
+      if (libView) { libView.classList.remove('hidden'); libView.classList.add('active'); libView.style.display = 'flex'; libView.style.opacity = '1'; }
       this.startCanvases();
       if (onComplete) onComplete();
     }

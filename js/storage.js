@@ -23,27 +23,47 @@ class InkStorage {
     }
   }
 
-  // Save series metadata + uncompiled chapter list
+  // Save series metadata + uncompiled chapter list (deduplicated by sourceUrl / title)
   async saveSeries(seriesData) {
     const { id, title, coverUrl, sourceUrl, chapters } = seriesData;
+    if (!this.db.series) return null;
+
+    // Check if series with same sourceUrl or title already exists
+    let existing = null;
+    if (sourceUrl) {
+      existing = await this.db.series.where('sourceUrl').equals(sourceUrl).first();
+    }
+    if (!existing && title) {
+      existing = await this.db.series.where('title').equals(title).first();
+    }
+
+    const seriesId = existing ? existing.id : (id || `series_${Date.now()}`);
+
     const seriesObj = {
-      id: id || `series_${Date.now()}`,
+      id: seriesId,
       title,
       coverUrl,
       sourceUrl,
-      addedAt: new Date().toISOString(),
-      chapters: chapters || [] // [{ title, url }]
+      addedAt: existing ? existing.addedAt : new Date().toISOString(),
+      chapters: chapters || []
     };
-    if (this.db.series) {
-      await this.db.series.put(seriesObj);
-    }
+
+    await this.db.series.put(seriesObj);
     return seriesObj.id;
   }
 
   async getAllSeries() {
     if (!this.db.series) return [];
     try {
-      return await this.db.series.orderBy('addedAt').reverse().toArray();
+      const all = await this.db.series.orderBy('addedAt').reverse().toArray();
+      const uniqueMap = new Map();
+      for (let s of all) {
+        const key = s.sourceUrl || s.title;
+        if (key && !uniqueMap.has(key)) {
+          uniqueMap.set(key, s);
+        }
+      }
+      return Array.from(uniqueMap.values());
     } catch (e) {
       return [];
     }

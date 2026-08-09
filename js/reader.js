@@ -692,8 +692,6 @@ class ImmersiveReader {
   }
 
   exitReader() {
-    // Hide reader, close any modals
-    document.getElementById('view-reader')?.classList.remove('active');
     this.hideChapterCompleteModal();
 
     // Stop ambient effects
@@ -703,8 +701,12 @@ class ImmersiveReader {
     // Reset reading position so reload starts from Zone 1
     this.currentPanelIndex = 0;
 
-    // Show library and refresh grid
-    if (window.app) {
+    // Use GSAP UI FX transition to library if available
+    if (window.inkUIFX) {
+      window.inkUIFX.transitionToLibrary(() => {
+        if (window.app) window.app.loadLibraryGrid();
+      });
+    } else if (window.app) {
       window.app.showView('library');
       window.app.loadLibraryGrid();
     }
