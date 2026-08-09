@@ -35,15 +35,13 @@ class InkScrollApp {
   }
 
   bindEvents() {
-    // Brand Click -> Return to Library (if in reader, clean up first)
+    // Brand Click -> Return to Landing Start Screen
     this.on('nav-brand', 'click', () => {
       const readerActive = document.getElementById('view-reader')?.classList.contains('active');
       if (readerActive && window.immersiveReader) {
         window.immersiveReader.exitReader();
-      } else {
-        this.showView('library');
-        this.loadLibraryGrid();
       }
+      this.showView('landing');
     });
     this.on('btn-exit-reader', 'click', () => window.immersiveReader.exitReader());
 
@@ -53,12 +51,9 @@ class InkScrollApp {
     this.on('btn-cancel-import', 'click', () => this.closeImportModal());
     this.on('btn-submit-import', 'click', () => this.handleModalImport());
 
-    // START READING Button -> Smooth scroll down to Compiled Chapters library section
+    // START READING Button -> Switch to Library View
     this.on('hero-start-reading-btn', 'click', () => {
-      const gridHeader = document.querySelector('.library-section-header');
-      if (gridHeader) {
-        gridHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      this.showView('library');
     });
 
     // Hero URL Import Bar
@@ -447,19 +442,35 @@ class InkScrollApp {
   }
 
   showView(viewName) {
+    const landingView = document.getElementById('view-landing');
     const libView = document.getElementById('view-library');
     const rdrView = document.getElementById('view-reader');
     const modalComplete = document.getElementById('modal-chapter-complete');
 
     if (modalComplete) modalComplete.classList.remove('active');
 
-    if (viewName === 'library' || viewName === 'main') {
-      if (rdrView) {
-        rdrView.classList.remove('active');
-        rdrView.classList.add('hidden');
-        rdrView.style.display = 'none';
-        rdrView.style.opacity = '0';
+    const hideAll = () => {
+      [landingView, libView, rdrView].forEach(v => {
+        if (v) {
+          v.classList.remove('active');
+          v.classList.add('hidden');
+          v.style.display = 'none';
+          v.style.opacity = '0';
+        }
+      });
+    };
+
+    if (viewName === 'landing' || viewName === 'start') {
+      hideAll();
+      if (landingView) {
+        landingView.classList.remove('hidden');
+        landingView.classList.add('active');
+        landingView.style.display = 'flex';
+        landingView.style.opacity = '1';
       }
+      this.currentView = 'landing';
+    } else if (viewName === 'library' || viewName === 'main') {
+      hideAll();
       if (libView) {
         libView.classList.remove('hidden');
         libView.classList.add('active');
@@ -473,12 +484,7 @@ class InkScrollApp {
       this.loadLibraryGrid();
       this.currentView = 'library';
     } else if (viewName === 'reader') {
-      if (libView) {
-        libView.classList.remove('active');
-        libView.classList.add('hidden');
-        libView.style.display = 'none';
-        libView.style.opacity = '0';
-      }
+      hideAll();
       if (rdrView) {
         rdrView.classList.remove('hidden');
         rdrView.classList.add('active');
