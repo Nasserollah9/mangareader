@@ -895,9 +895,194 @@ html, body {
   z-index: 4;
 }
 
+/* ==========================================================================
+   InkScroll Mobile Responsive & Touch Optimization System
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  /* Mobile Navigation Bar */
+  .ink-navbar {
+    padding: 0 12px;
+    height: 56px;
+  }
+
+  .brand-logo span {
+    font-size: 1.1rem;
+  }
+
+  .nav-actions {
+    gap: 6px;
+  }
+
+  .btn-ink {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    height: 36px;
+  }
+
+  .btn-ink span {
+    display: none; /* Hide text labels on mobile header, keep clean touch icons */
+  }
+
+  .btn-ink i {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+  }
+
+  /* Library Container & Hero Section */
+  .library-container {
+    padding: 16px 12px;
+  }
+
+  .hero-banner {
+    padding: 28px 16px;
+    border-radius: 16px;
+    min-height: auto;
+  }
+
+  .hero-title {
+    font-size: 1.70rem;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .hero-subtitle {
+    font-size: 0.85rem;
+    margin-bottom: 18px;
+    line-height: 1.45;
+  }
+
+  .import-bar {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+    padding: 8px;
+  }
+
+  .url-input-glass {
+    width: 100%;
+    font-size: 0.85rem;
+    padding: 12px 14px;
+  }
+
+  .cta-compile {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 18px;
+    font-size: 0.90rem;
+  }
+
+  /* Library Section Header */
+  .library-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 24px;
+    margin-bottom: 16px;
+  }
+
+  .library-section-header .btn-ink span {
+    display: inline; /* Keep labels on section header action buttons */
+  }
+
+  /* Chapter Grid on Mobile */
+  .chapter-grid {
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+    gap: 12px;
+  }
+
+  .card-body {
+    padding: 10px;
+  }
+
+  .card-title {
+    font-size: 0.85rem;
+  }
+
+  .card-meta {
+    font-size: 0.72rem;
+  }
+
+  /* Always display card delete button on touch devices (no hover required) */
+  .card-delete-btn {
+    opacity: 1 !important;
+    width: 32px;
+    height: 32px;
+    top: 8px;
+    left: 8px;
+  }
+
+  /* Reader View & Floating Top HUD Bar */
+  .reader-hud-top {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    width: calc(100% - 16px);
+    transform: none;
+    padding: 6px 10px;
+    border-radius: 12px;
+  }
+
+  .reader-chapter-title {
+    font-size: 0.80rem;
+    max-width: 110px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .hud-icon-btn {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+  }
+
+  .hud-icon-btn i {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Bottom Progress Badge HUD */
+  .reader-hud-bottom {
+    bottom: 12px;
+    padding: 6px 12px;
+  }
+
+  .panel-counter-badge {
+    font-size: 0.75rem;
+  }
+
+  /* Import & Settings Modals */
+  .modal-glass {
+    width: calc(100% - 24px);
+    padding: 20px;
+    max-height: 90vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 1.40rem;
+  }
+
+  .chapter-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .reader-chapter-title {
+    max-width: 80px;
+  }
+}
+
 /* Reduced Motion Fallback */
 @media (prefers-reduced-motion: reduce) {
   .hero-bg, .cta-compile, #hero-ink-canvas, #hero-ember-canvas {
+    animation: none !important;
+    transition: none !important;
+  }
+}
     animation: none !important;
   }
   * {

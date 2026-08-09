@@ -115,25 +115,34 @@ class ImmersiveReader {
       });
     }, { passive: false });
 
-    // Touch Swipes
+    // Touch Swipes & Mobile Taps
+    let touchStartTime = 0;
     this.canvas.addEventListener('touchstart', (e) => {
       this.touchStartX = e.touches[0].clientX;
-    });
+      touchStartTime = Date.now();
+    }, { passive: true });
+
     this.canvas.addEventListener('touchend', (e) => {
       if (this.freePanMode) return;
       const touchEndX = e.changedTouches[0].clientX;
       const diffX = touchEndX - this.touchStartX;
-      if (Math.abs(diffX) > 50) {
+      const duration = Date.now() - touchStartTime;
+
+      // Handle swipe gesture
+      if (Math.abs(diffX) > 40 && duration < 500) {
         if (diffX < 0) this.nextPanel();
         else this.prevPanel();
+        return;
       }
     });
 
-    // Click Navigation
+    // Tap / Click Navigation (Desktop & Mobile)
     this.canvas.addEventListener('click', (e) => {
       if (this.freePanMode) return;
-      if (e.target.closest('.reader-hud-top') || e.target.closest('.hud-icon-btn') || e.target.closest('.btn-ink')) return;
-      if (e.clientX > window.innerWidth * 0.45) {
+      if (e.target.closest('.reader-hud-top') || e.target.closest('.hud-icon-btn') || e.target.closest('.btn-ink') || e.target.closest('.modal-glass')) return;
+      
+      const x = e.clientX || (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : 0);
+      if (x > window.innerWidth * 0.40) {
         this.nextPanel();
       } else {
         this.prevPanel();
