@@ -7,10 +7,68 @@ class InkStorage {
       pages: 'id, chapterId, index',
       panels: 'id, chapterId, pageIndex, readingOrder'
     });
+    this.db.version(2).stores({
+      chapters: 'id, title, seriesId, sourceType, importedAt, lastReadAt, progress',
+      pages: 'id, chapterId, index',
+      panels: 'id, chapterId, pageIndex, readingOrder',
+      series: 'id, title, coverUrl, sourceUrl, addedAt'
+    });
   }
 
   async init() {
-    await this.db.open();
+    try {
+      await this.db.open();
+    } catch (e) {
+      console.warn('Dexie DB open error, attempting upgrade fallback:', e);
+    }
+  }
+
+  // Save series metadata + uncompiled chapter list
+  async saveSeries(seriesData) {
+    const { id, title, coverUrl, sourceUrl, chapters } = seriesData;
+    const seriesObj = {
+      id: id || `series_${Date.now()}`,
+      title,
+      coverUrl,
+      sourceUrl,
+      addedAt: new Date().toISOString(),
+      chapters: chapters || [] // [{ title, url }]
+    };
+    if (this.db.series) {
+      await this.db.series.put(seriesObj);
+    }
+    return seriesObj.id;
+  }
+
+  async getAllSeries() {
+    if (!this.db.series) return [];
+    try {
+      return await this.db.series.orderBy('addedAt').reverse().toArray();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async getSeries(seriesId) {
+    if (!this.db.series) return null;
+    try {
+      return await this.db.series.get(seriesId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async deleteSeries(seriesId) {
+    if (!this.db.series) return;
+    try {
+      await this.db.transaction('rw', this.db.series, this.db.chapters, this.db.pages, this.db.panels, async () => {
+        await this.db.series.delete(seriesId);
+        const chs = await this.db.chapters.where('seriesId').equals(seriesId).toArray();
+        for (let ch of chs) {
+          await this.deleteChapter(ch.id);
+        }
+      });
+    } catch (e) {}
   }
 
   // Save a compiled chapter with pages and panels

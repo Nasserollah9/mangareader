@@ -162,14 +162,19 @@ class ImmersiveReader {
     document.getElementById('reader-title').textContent = this.chapter.title;
     document.getElementById('view-reader').classList.add('active');
 
+    // Update Next Chapter HUD button visibility
+    const nextBtn = document.getElementById('btn-next-chapter-hud');
+    if (nextBtn) {
+      nextBtn.style.display = this.nextChapterData ? 'flex' : 'none';
+    }
+
     // Build 3D meshes for all pages in scene
     await this.buildPageMeshes();
 
     // Start Weather Particles
     this.startWeatherParticles('rain');
 
-    // Immediately snap camera to Zone 1 (no animation, duration=0)
-    // so the user NEVER sees the full page at the start
+    // Immediately snap camera to Zone 1
     this.navigateToPanel(0, 0);
 
     // Play ambient audio
@@ -484,6 +489,10 @@ class ImmersiveReader {
 
   showChapterCompleteModal() {
     const modal = document.getElementById('modal-chapter-complete');
+    const nextBtn = document.getElementById('btn-complete-next');
+    if (nextBtn) {
+      nextBtn.style.display = this.nextChapterData ? 'inline-flex' : 'none';
+    }
     if (modal) modal.classList.add('active');
   }
 
