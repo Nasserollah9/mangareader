@@ -35,8 +35,16 @@ class InkScrollApp {
   }
 
   bindEvents() {
-    // Brand Click -> Return to Library
-    this.on('nav-brand', 'click', () => this.showView('library'));
+    // Brand Click -> Return to Library (if in reader, clean up first)
+    this.on('nav-brand', 'click', () => {
+      const readerActive = document.getElementById('view-reader')?.classList.contains('active');
+      if (readerActive && window.immersiveReader) {
+        window.immersiveReader.exitReader();
+      } else {
+        this.showView('library');
+        this.loadLibraryGrid();
+      }
+    });
     this.on('btn-exit-reader', 'click', () => window.immersiveReader.exitReader());
 
     // Import Buttons & Modal Controls
@@ -222,8 +230,14 @@ class InkScrollApp {
       if (delBtn) {
         delBtn.addEventListener('click', async (e) => {
           e.stopPropagation();
-          if (confirm(`Delete chapter "${ch.title}"?`)) {
+          e.preventDefault();
+          if (confirm(`Delete "${ch.title}"?`)) {
             await window.inkStorage.deleteChapter(ch.id);
+            // Always ensure demo chapter exists after deletion
+            const remaining = await window.inkStorage.getAllChapters();
+            if (remaining.length === 0) {
+              await window.demoChapterBuilder.ensureDemoChapterLoaded();
+            }
             await this.loadLibraryGrid();
           }
         });
@@ -396,10 +410,13 @@ class InkScrollApp {
   showView(viewName) {
     document.querySelectorAll('.view-screen').forEach(el => el.classList.remove('active'));
     if (viewName === 'library') {
-      document.getElementById('view-library').classList.add('active');
+      document.getElementById('view-library')?.classList.add('active');
+      // Ensure reader chapter-complete modal is closed when going back to library
+      document.getElementById('modal-chapter-complete')?.classList.remove('active');
     } else if (viewName === 'reader') {
-      document.getElementById('view-reader').classList.add('active');
+      document.getElementById('view-reader')?.classList.add('active');
     }
+    this.currentView = viewName;
   }
 
   toggleFullscreen() {

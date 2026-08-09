@@ -590,10 +590,22 @@ class ImmersiveReader {
   }
 
   exitReader() {
-    document.getElementById('view-reader').classList.remove('active');
+    // Hide reader, close any modals
+    document.getElementById('view-reader')?.classList.remove('active');
+    this.hideChapterCompleteModal();
+
+    // Stop ambient effects
     if (this.isAutoScrolling) this.toggleAutoScroll();
     if (window.inkAudio) window.inkAudio.stopAmbient();
-    if (window.app) window.app.loadLibraryGrid();
+
+    // Reset reading position so reload starts from Zone 1
+    this.currentPanelIndex = 0;
+
+    // Show library and refresh grid
+    if (window.app) {
+      window.app.showView('library');
+      window.app.loadLibraryGrid();
+    }
   }
 }
 
