@@ -53,6 +53,20 @@ class InkScrollApp {
     this.on('btn-cancel-import', 'click', () => this.closeImportModal());
     this.on('btn-submit-import', 'click', () => this.handleModalImport());
 
+    // START READING Button
+    this.on('hero-start-reading-btn', 'click', async () => {
+      const chapters = await window.inkStorage.getAllChapters();
+      if (chapters && chapters.length > 0) {
+        const latestFull = await window.inkStorage.getChapterFull(chapters[0].id);
+        if (latestFull) {
+          this.openChapterInReader(latestFull);
+          return;
+        }
+      }
+      const demoData = await window.inkStorage.getChapterFull('demo_blade_of_ink');
+      if (demoData) this.openChapterInReader(demoData);
+    });
+
     // Hero URL Import Bar
     this.on('hero-import-btn', 'click', () => {
       const input = document.getElementById('hero-url-input');
@@ -226,9 +240,14 @@ class InkScrollApp {
           </div>
           <div class="card-body">
             <div class="card-title">${ch.title}</div>
-            <div class="card-meta">
-              <span>${fullData?.pages.length || 0} Pages</span>
-              <span>${fullData?.panels.length || 0} Zones</span>
+            <div class="card-meta" style="display: flex; justify-content: space-between; align-items: center;">
+              <span>${fullData?.pages.length || 0} Pages · ${fullData?.panels.length || 0} Zones</span>
+              ${ch.sourceUrl && ch.sourceUrl.startsWith('http') ? `
+                <button class="card-copy-btn" title="Copy Source URL" style="background: rgba(255,255,255,0.08); border: 1px solid var(--ink-border); color: var(--text-white); padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                  <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
+                  <span>Copy URL</span>
+                </button>
+              ` : ''}
             </div>
             <div class="progress-bar-bg">
               <div class="progress-bar-fill" style="width: ${ch.progress || 0}%"></div>
@@ -236,6 +255,24 @@ class InkScrollApp {
           </div>
         </div>
       `;
+
+      const copyBtn = card.querySelector('.card-copy-btn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          if (ch.sourceUrl) {
+            navigator.clipboard.writeText(ch.sourceUrl);
+            const span = copyBtn.querySelector('span');
+            if (span) {
+              const orig = span.textContent;
+              span.textContent = 'Copied!';
+              setTimeout(() => { span.textContent = orig; }, 1800);
+            }
+          }
+        });
+      }
 
       const delBtn = card.querySelector('.card-delete-btn');
       if (delBtn) {
@@ -251,7 +288,7 @@ class InkScrollApp {
       }
 
       card.addEventListener('click', (e) => {
-        if (e.target.closest('.card-delete-btn')) return;
+        if (e.target.closest('.card-delete-btn') || e.target.closest('.card-copy-btn')) return;
         if (fullData) this.openChapterInReader(fullData);
       });
 

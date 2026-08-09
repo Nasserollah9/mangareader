@@ -66,13 +66,20 @@
           <h1 class="hero-title">Step Into Living Ink</h1>
           <p class="hero-subtitle">Cinematic panel-by-panel manga reading with right-to-left flow, atmospheric soundscapes, and dramatic WebGL zooms.</p>
           
-          <!-- 3. Glassmorphic URL Import Bar -->
-          <div class="import-bar">
-            <input type="url" id="hero-url-input" class="url-input-glass" placeholder="Paste manga URL (e.g., https://3asq.online/manga/one-piece/1190/)">
-            <button class="cta-compile pulsing" id="hero-import-btn">
-              <i data-lucide="sparkles"></i>
-              <span>Compile & Read</span>
+          <div class="hero-actions-wrapper" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-top: 24px;">
+            <button class="cta-compile" id="hero-start-reading-btn" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); font-size: 1.05rem; padding: 16px 36px; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);">
+              <i data-lucide="play-circle"></i>
+              <span>START READING</span>
             </button>
+
+            <!-- Glassmorphic URL Import Bar -->
+            <div class="import-bar" style="flex: 1; min-width: 320px;">
+              <input type="url" id="hero-url-input" class="url-input-glass" placeholder="Paste manga URL (e.g., https://3asq.online/manga/one-piece/1190/)">
+              <button class="cta-compile" id="hero-import-btn">
+                <i data-lucide="sparkles"></i>
+                <span>Compile & Read</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>

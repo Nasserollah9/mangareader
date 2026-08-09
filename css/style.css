@@ -456,30 +456,27 @@ html, body {
   position: absolute;
   top: 12px;
   left: 12px;
-  background: rgba(220, 38, 38, 0.90);
+  background: rgba(220, 38, 38, 0.95);
   border: 1px solid var(--accent-crimson);
   color: #fff;
-  width: 34px;
-  height: 34px;
-  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 100 !important;
   pointer-events: auto !important;
-  opacity: 0.85;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  opacity: 1 !important;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.5);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .card-delete-btn:hover {
-  background: #ef4444;
-  transform: scale(1.1);
-  opacity: 1 !important;
-}
-
-.chapter-card:hover .card-delete-btn {
-  opacity: 1;
+  background: #dc2626;
+  transform: scale(1.12);
+  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.8);
 }
 
 .card-body {
