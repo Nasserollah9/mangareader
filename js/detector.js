@@ -1,5 +1,5 @@
 // InkScroll Manga Panel & Zone Segmentation Engine
-// Implements 12-Zone Overlapping Reading Grid (RTL, TTB) & Full-Page Reveal Flow
+// Implements 6-Panel Reading Sequence (1 -> 2 -> 3 -> 4 -> 5 -> 6) & Full-Page Zoom-Out Reveal
 class MangaPanelDetector {
 
   // Auto-detect panels & reading zones for an array of page images
@@ -26,12 +26,13 @@ class MangaPanelDetector {
       const data = imgData.data;
 
       const detectedBoxes = this.detectProjectionBoxes(data, w, h);
-      let pageZones = [];
+      let pagePanels = [];
 
       if (detectedBoxes.length >= 2) {
+        // Sort detected panels in strict Manga Reading Order (Right to Left per row, Top to Bottom)
         const sorted = this.sortMangaReadingOrder(detectedBoxes);
-        pageZones = sorted.map((b, idx) => ({
-          id: `p_${page.index}_zone_${idx}_${Date.now()}`,
+        pagePanels = sorted.map((b, idx) => ({
+          id: `p_${page.index}_panel_${idx}_${Date.now()}`,
           chapterId: page.chapterId || '',
           pageIndex: page.index,
           bounds: {
@@ -44,12 +45,12 @@ class MangaPanelDetector {
           type: 'panel'
         }));
       } else {
-        // Guaranteed 100% 12-Zone Reading Grid (matching diagram: 1..4 top row RTL, 5..8 mid row RTL, 9..12 bot row RTL)
-        pageZones = this.generate12ZoneCoverageGrid(page);
+        // Authentic 6-Panel Reading Grid (1 top-right, 2 top-left, 3 mid-right, 4 mid-left, 5 bot-right, 6 bot-left)
+        pagePanels = this.generate6PanelReadingGrid(page);
       }
 
-      // Add the final Full-Page Zoom-Out Reveal step at the end of this page
-      pageZones.push({
+      // Append the Full-Page Zoom-Out Reveal step at the end of this page
+      pagePanels.push({
         id: `p_${page.index}_fullreveal_${Date.now()}`,
         chapterId: page.chapterId || '',
         pageIndex: page.index,
@@ -58,12 +59,12 @@ class MangaPanelDetector {
         type: 'fullbleed'
       });
 
-      return pageZones;
+      return pagePanels;
 
     } catch (err) {
-      console.warn(`Panel zone generation fallback for page ${page.index}:`, err);
-      const grid = this.generate12ZoneCoverageGrid(page);
-      grid.push({
+      console.warn(`Panel generation fallback for page ${page.index}:`, err);
+      const fallback = this.generate6PanelReadingGrid(page);
+      fallback.push({
         id: `p_${page.index}_fullreveal_${Date.now()}`,
         chapterId: page.chapterId || '',
         pageIndex: page.index,
@@ -71,7 +72,7 @@ class MangaPanelDetector {
         isFullPageReveal: true,
         type: 'fullbleed'
       });
-      return grid;
+      return fallback;
     }
   }
 
@@ -175,30 +176,19 @@ class MangaPanelDetector {
     return rawBoxes;
   }
 
-  // 12-Zone Overlapping Reading Grid for 100% Page Coverage (RTL, TTB)
-  generate12ZoneCoverageGrid(page) {
-    const zones = [];
-    
-    // Row 1: Top (Zones 1, 2, 3, 4 -> Right to Left)
-    zones.push({ bounds: { x: 0.65, y: 0.00, w: 0.38, h: 0.38 } }); // 1: Top-Right
-    zones.push({ bounds: { x: 0.44, y: 0.00, w: 0.38, h: 0.38 } }); // 2: Top-Mid-Right
-    zones.push({ bounds: { x: 0.22, y: 0.00, w: 0.38, h: 0.38 } }); // 3: Top-Mid-Left
-    zones.push({ bounds: { x: 0.00, y: 0.00, w: 0.38, h: 0.38 } }); // 4: Top-Left
+  // Authentic 6-Panel Manga Layout Grid (1 top-right, 2 top-left, 3 mid-right, 4 mid-left, 5 bot-right, 6 bot-left)
+  generate6PanelReadingGrid(page) {
+    const panels = [
+      { bounds: { x: 0.50, y: 0.00, w: 0.50, h: 0.33 } }, // 1: Top-Right
+      { bounds: { x: 0.00, y: 0.00, w: 0.50, h: 0.33 } }, // 2: Top-Left
+      { bounds: { x: 0.50, y: 0.33, w: 0.50, h: 0.33 } }, // 3: Mid-Right
+      { bounds: { x: 0.00, y: 0.33, w: 0.50, h: 0.33 } }, // 4: Mid-Left
+      { bounds: { x: 0.50, y: 0.66, w: 0.50, h: 0.34 } }, // 5: Bot-Right
+      { bounds: { x: 0.00, y: 0.66, w: 0.50, h: 0.34 } }  // 6: Bot-Left
+    ];
 
-    // Row 2: Middle (Zones 5, 6, 7, 8 -> Right to Left)
-    zones.push({ bounds: { x: 0.65, y: 0.30, w: 0.38, h: 0.40 } }); // 5: Mid-Right
-    zones.push({ bounds: { x: 0.44, y: 0.30, w: 0.38, h: 0.40 } }); // 6: Mid-Center-Right
-    zones.push({ bounds: { x: 0.22, y: 0.30, w: 0.38, h: 0.40 } }); // 7: Mid-Center-Left
-    zones.push({ bounds: { x: 0.00, y: 0.30, w: 0.42, h: 0.42 } }); // 8: Mid-Left
-
-    // Row 3: Bottom (Zones 9, 10, 11, 12 -> Right to Left)
-    zones.push({ bounds: { x: 0.62, y: 0.62, w: 0.40, h: 0.40 } }); // 9: Bottom-Right
-    zones.push({ bounds: { x: 0.40, y: 0.62, w: 0.40, h: 0.40 } }); // 10: Bottom-Mid-Right
-    zones.push({ bounds: { x: 0.18, y: 0.62, w: 0.40, h: 0.40 } }); // 11: Bottom-Mid-Left
-    zones.push({ bounds: { x: 0.00, y: 0.62, w: 0.40, h: 0.40 } }); // 12: Bottom-Left
-
-    return zones.map((z, idx) => ({
-      id: `p_${page.index}_z${idx + 1}_${Date.now()}`,
+    return panels.map((z, idx) => ({
+      id: `p_${page.index}_p${idx + 1}_${Date.now()}`,
       chapterId: page.chapterId || '',
       pageIndex: page.index,
       bounds: z.bounds,
@@ -259,7 +249,8 @@ class MangaPanelDetector {
 
     const finalOrderedPanels = [];
     for (let row of rows) {
-      row.sort((a, b) => (b.bounds.x + b.bounds.w) - (a.bounds.x + a.bounds.w));
+      // Sort panels right-to-left within each row (highest X center to lowest X center)
+      row.sort((a, b) => (b.bounds.x + b.bounds.w / 2) - (a.bounds.x + a.bounds.w / 2));
       finalOrderedPanels.push(...row);
     }
 
