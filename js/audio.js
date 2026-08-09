@@ -60,6 +60,13 @@ class InkAudioEngine {
     }
   }
 
+  stopAmbient() {
+    if (this.rainOsc) {
+      try { this.rainOsc.stop(); } catch (e) {}
+      this.rainOsc = null;
+    }
+  }
+
   // Phase 4a: Ambient Crossfade between moods
   crossfadeAmbient(nextMood = 'action') {
     if (this.isMuted) return;
