@@ -41,8 +41,8 @@ class InkScrollApp {
       if (readerActive && window.immersiveReader) {
         window.immersiveReader.exitReader();
       } else {
+        // showView('library') already reloads the grid internally
         this.showView('library');
-        this.loadLibraryGrid();
       }
     });
     this.on('btn-exit-reader', 'click', () => window.immersiveReader.exitReader());
@@ -746,7 +746,9 @@ class InkScrollApp {
       if (window.inkUIFX) {
         window.inkUIFX.startCanvases();
       }
-      this.loadLibraryGrid();
+      if (this.currentView !== 'library') {
+        this.loadLibraryGrid();
+      }
       this.currentView = 'library';
     } else if (viewName === 'reader') {
       if (libView) {

@@ -704,11 +704,14 @@ class ImmersiveReader {
     // Use GSAP UI FX transition to library if available
     if (window.inkUIFX) {
       window.inkUIFX.transitionToLibrary(() => {
-        if (window.app) window.app.loadLibraryGrid();
+        if (window.app) {
+          window.app.currentView = 'library';
+          window.app.loadLibraryGrid();
+        }
       });
     } else if (window.app) {
+      // showView already calls loadLibraryGrid internally when switching views
       window.app.showView('library');
-      window.app.loadLibraryGrid();
     }
   }
 }
