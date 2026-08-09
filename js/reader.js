@@ -148,7 +148,7 @@ class ImmersiveReader {
     this.chapter = chapterData.chapter;
     this.pages = chapterData.pages;
     this.panels = chapterData.panels;
-    this.currentPanelIndex = Math.min(startPanelIndex, this.panels.length - 1);
+    this.currentPanelIndex = 0; // Always start on Zone 1
 
     document.getElementById('reader-title').textContent = this.chapter.title;
     document.getElementById('view-reader').classList.add('active');
@@ -159,8 +159,9 @@ class ImmersiveReader {
     // Start Weather Particles
     this.startWeatherParticles('rain');
 
-    // Focus camera on starting panel
-    this.navigateToPanel(this.currentPanelIndex, 0);
+    // Immediately snap camera to Zone 1 (no animation, duration=0)
+    // so the user NEVER sees the full page at the start
+    this.navigateToPanel(0, 0);
 
     // Play ambient audio
     if (window.inkAudio) {
@@ -221,77 +222,85 @@ class ImmersiveReader {
     const curtain = document.getElementById('ink-curtain-overlay');
 
     const performCameraSwapAndPan = () => {
-      // Hide neighboring pages so zero adjacent page artwork peeks out in margins!
+      // Show only the target page, hide others
       for (let [pIndex, m] of this.pageMeshes.entries()) {
         m.visible = (pIndex === targetPanel.pageIndex);
       }
 
-      // Calculate target camera position and zoom
+      // Page geometry in world units
       const pageAspect = page.width / page.height;
-      const meshW = 2 * pageAspect;
-      const meshH = 2;
+      const meshW = 2 * pageAspect;  // world width of page mesh
+      const meshH = 2;               // world height of page mesh
       const screenAspect = window.innerWidth / window.innerHeight;
 
-      // Panel center bounds mapped to world coordinates
-      const targetX = mesh.position.x - meshW / 2 + (targetPanel.bounds.x + targetPanel.bounds.w / 2) * meshW;
-      const targetY = mesh.position.y + meshH / 2 - (targetPanel.bounds.y + targetPanel.bounds.h / 2) * meshH;
+      // Zone center in world coordinates
+      const zx = targetPanel.bounds.x + targetPanel.bounds.w / 2;
+      const zy = targetPanel.bounds.y + targetPanel.bounds.h / 2;
+      const targetX = mesh.position.x - meshW / 2 + zx * meshW;
+      const targetY = mesh.position.y + meshH / 2 - zy * meshH;
 
       let targetZoom;
       if (targetPanel.isFullPageReveal) {
-        // Zoom out to fit 100% of full page
-        targetZoom = Math.min(screenAspect / pageAspect, 1.0) * 0.88;
+        // Zoom out to show entire page — fit height and width
+        const fitByH = 1 / meshH;        // orthographic: zoom to fit page height
+        const fitByW = screenAspect / meshW; // zoom to fit page width
+        targetZoom = Math.min(fitByH, fitByW) * 1.85; // 1.85 = tuning so page fills screen
       } else {
-        // Focused zoom level on individual reading zone
-        const zoomHeight = (1 / Math.max(0.10, targetPanel.bounds.h)) * 0.88;
-        const zoomWidth = (screenAspect / (Math.max(0.10, targetPanel.bounds.w) * pageAspect)) * 0.88;
-        targetZoom = Math.min(zoomHeight, zoomWidth, 2.5);
+        // Zoom in so ONLY this zone fills the visible screen area
+        // The orthographic camera half-height = 1/zoom, half-width = screenAspect/zoom
+        // We want: zone height in world = visible height, zone width in world = visible width
+        // zone height in world = bounds.h * meshH
+        // zone width  in world = bounds.w * meshW
+        // zoom = 1 / (bounds.h * meshH / 2)  from height
+        // zoom = screenAspect / (bounds.w * meshW / 2)  from width
+        // Take the larger zoom so zone fills screen without showing outside
+        const zoneH = targetPanel.bounds.h * meshH;
+        const zoneW = targetPanel.bounds.w * meshW;
+        const zoomByH = (2 / zoneH);
+        const zoomByW = (2 * screenAspect / zoneW);
+        // Use the smaller (fit the whole zone) but scale to ~85% so not too tight
+        targetZoom = Math.min(zoomByH, zoomByW) * 0.92;
       }
 
       // Play subtle transition sound
       if (window.inkAudio) window.inkAudio.playPanelTransition();
 
-      // Direction-Aware Motion & Camera Pan
       if (!this.baseCameraPos) this.baseCameraPos = { x: targetX, y: targetY };
 
-      // SBS "The Boat" Signature 3D Camera Z-Flight Dip Effect
+      // Z-dip cinematic effect
       gsap.to(this.camera.position, {
-        z: 9.3,
-        duration: duration * 0.5,
+        z: 9.4,
+        duration: duration * 0.4,
         ease: "power2.in",
         onComplete: () => {
           gsap.to(this.camera.position, {
             z: 10,
-            duration: duration * 0.5,
+            duration: duration * 0.6,
             ease: "power2.out"
           });
         }
       });
 
+      // Pan camera to zone center
       gsap.to(this.baseCameraPos, {
         x: targetX,
         y: targetY,
         duration: duration,
-        ease: "power2.out"
+        ease: "power3.out"
       });
 
-      // Smooth camera zoom directly to targetZoom
+      // Zoom camera
       gsap.to(this.camera, {
         zoom: targetZoom,
         duration: duration,
-        ease: "power2.out",
+        ease: "power3.out",
         onUpdate: () => this.camera.updateProjectionMatrix()
       });
 
-      // 3D Volumetric Cloud Parting & Reveal Animation
+      // Visual effects
       this.triggerCloudParting();
-
-      // Trigger directional sweep vignette overlay
       if (window.inkUIFX) window.inkUIFX.triggerDirectionalSweep();
-
-      // Update UI Progress & Panel Counter Badge
       this.updateProgressUI(index);
-
-      // Render SFX overlay
       this.renderPanelSFX(targetPanel);
     };
 
