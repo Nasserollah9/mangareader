@@ -276,26 +276,18 @@ class ImmersiveReader {
 
       if (!this.baseCameraPos) this.baseCameraPos = { x: targetX, y: targetY };
 
-      // Z-dip cinematic effect
-      gsap.to(this.camera.position, {
-        z: 9.4,
-        duration: duration * 0.4,
-        ease: "power2.in",
-        onComplete: () => {
-          gsap.to(this.camera.position, {
-            z: 10,
-            duration: duration * 0.6,
-            ease: "power2.out"
-          });
-        }
-      });
+      // Subtle circle-to-circle transition impact shake
+      gsap.fromTo(this.camera.position,
+        { z: 9.6 },
+        { z: 10, duration: 0.35, ease: "power2.out" }
+      );
 
-      // Pan camera to zone center
+      // Smooth camera pan straight to next circle center
       gsap.to(this.baseCameraPos, {
         x: targetX,
         y: targetY,
         duration: duration,
-        ease: "power3.out"
+        ease: "power2.inOut"
       });
 
       // Zoom camera
@@ -568,15 +560,19 @@ class ImmersiveReader {
     requestAnimationFrame(() => this.animate());
 
     if (this.camera && this.baseCameraPos) {
-      // Steady camera base position
-      this.camera.position.x = this.baseCameraPos.x;
-      this.camera.position.y = this.baseCameraPos.y;
+      // Gentle cinematic floating breathing motion while reading on a circle
+      const time = Date.now() * 0.0012;
+      const floatX = Math.sin(time) * 0.006;
+      const floatY = Math.cos(time * 0.85) * 0.006;
 
-      // SBS "The Boat" Floating 3D Canvas Mouse Parallax & Tilt Effect
+      this.camera.position.x = this.baseCameraPos.x + floatX;
+      this.camera.position.y = this.baseCameraPos.y + floatY;
+
+      // Mouse tilt parallax
       const activeMesh = this.panels[this.currentPanelIndex] ? this.pageMeshes.get(this.panels[this.currentPanelIndex].pageIndex) : null;
       if (activeMesh) {
-        activeMesh.rotation.y += (this.targetMousePos.x * 0.08 - activeMesh.rotation.y) * 0.05;
-        activeMesh.rotation.x += (-this.targetMousePos.y * 0.08 - activeMesh.rotation.x) * 0.05;
+        activeMesh.rotation.y += (this.targetMousePos.x * 0.06 - activeMesh.rotation.y) * 0.05;
+        activeMesh.rotation.x += (-this.targetMousePos.y * 0.06 - activeMesh.rotation.x) * 0.05;
       }
 
       this.renderer.render(this.scene, this.camera);

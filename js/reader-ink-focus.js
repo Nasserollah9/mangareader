@@ -127,53 +127,13 @@
     wrapNavigationLogic() {
       if (!window.immersiveReader) return;
 
-      const originalNext = window.immersiveReader.nextPanel.bind(window.immersiveReader);
-      const originalPrev = window.immersiveReader.prevPanel.bind(window.immersiveReader);
       const originalNavigate = window.immersiveReader.navigateToPanel.bind(window.immersiveReader);
-
-      window.immersiveReader.nextPanel = () => {
-        if (this.isAnimating) return;
-        this.triggerGentleSlide('next', originalNext);
-      };
-
-      window.immersiveReader.prevPanel = () => {
-        if (this.isAnimating) return;
-        this.triggerGentleSlide('prev', originalPrev);
-      };
 
       window.immersiveReader.navigateToPanel = (index, duration) => {
         originalNavigate(index, duration);
         this.updateMinimalProgress(index);
         this.samplePageAmbientColor();
       };
-    }
-
-    triggerGentleSlide(direction, actionCallback) {
-      if (this.isAnimating) return;
-      this.isAnimating = true;
-
-      const stage = document.getElementById('reader-canvas') || this.container;
-      const exitClass = direction === 'next' ? 'ink-exit-next' : 'ink-exit-prev';
-      const enterClass = direction === 'next' ? 'ink-enter-next' : 'ink-enter-prev';
-
-      // 1. Trigger exit animation
-      stage.classList.add(exitClass);
-
-      // 2. At 50% point (~200ms), execute original page swap
-      setTimeout(() => {
-        if (actionCallback) actionCallback();
-
-        stage.classList.remove(exitClass);
-        stage.classList.add(enterClass);
-
-        // 3. Complete entrance animation and restore lock
-        setTimeout(() => {
-          stage.classList.remove(enterClass);
-          this.isAnimating = false;
-          this.samplePageAmbientColor();
-        }, 220);
-
-      }, 200);
     }
 
     /* ==========================================================================

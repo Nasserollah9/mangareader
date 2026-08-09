@@ -219,19 +219,7 @@
     wrapNavigationLogic() {
       if (!window.immersiveReader) return;
 
-      const originalNext = window.immersiveReader.nextPanel.bind(window.immersiveReader);
-      const originalPrev = window.immersiveReader.prevPanel.bind(window.immersiveReader);
       const originalNavigate = window.immersiveReader.navigateToPanel.bind(window.immersiveReader);
-
-      window.immersiveReader.nextPanel = () => {
-        if (this.isAnimating) return; // Prevent spam input desync
-        this.triggerCinematicTransition('next', originalNext);
-      };
-
-      window.immersiveReader.prevPanel = () => {
-        if (this.isAnimating) return;
-        this.triggerCinematicTransition('prev', originalPrev);
-      };
 
       window.immersiveReader.navigateToPanel = (index, duration) => {
         originalNavigate(index, duration);
