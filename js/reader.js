@@ -308,7 +308,9 @@ class ImmersiveReader {
 
       // Visual effects
       this.triggerCloudParting();
-      if (window.inkUIFX) window.inkUIFX.triggerDirectionalSweep();
+      if (window.inkUIFX && typeof window.inkUIFX.triggerDirectionalSweep === 'function') {
+        window.inkUIFX.triggerDirectionalSweep();
+      }
       this.updateProgressUI(index);
       this.renderPanelSFX(targetPanel);
     };

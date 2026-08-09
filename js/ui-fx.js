@@ -370,6 +370,39 @@ class InkUIFX {
       if (onComplete) onComplete();
     }
   }
+
+  triggerDirectionalSweep() {
+    const sweep = document.createElement('div');
+    sweep.style.cssText = `
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 12;
+      background: linear-gradient(110deg, transparent 35%, rgba(220, 38, 38, 0.15) 50%, transparent 65%);
+      opacity: 0;
+    `;
+    const container = document.getElementById('view-reader') || document.body;
+    container.appendChild(sweep);
+
+    if (typeof gsap !== 'undefined') {
+      gsap.fromTo(sweep,
+        { opacity: 0.8, xPercent: 100 },
+        {
+          xPercent: -100,
+          opacity: 0,
+          duration: 0.5,
+          ease: 'power2.out',
+          onComplete: () => {
+            if (sweep.parentNode) sweep.parentNode.removeChild(sweep);
+          }
+        }
+      );
+    } else {
+      setTimeout(() => {
+        if (sweep.parentNode) sweep.parentNode.removeChild(sweep);
+      }, 350);
+    }
+  }
 }
 
 window.inkUIFX = new InkUIFX();
