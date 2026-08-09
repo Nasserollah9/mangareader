@@ -1,0 +1,248 @@
+/* ==========================================================================
+   InkScroll Cinematic Reader Animations & 3D Layering Engine
+   ========================================================================== */
+
+:root {
+  --theme-accent-sampled: #dc2626;
+  --expo-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --expo-in: cubic-bezier(0.7, 0, 0.84, 0);
+}
+
+/* 1. Stage Perspective & GPU Layers */
+.cinematic-reader-stage {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+  position: relative;
+  overflow: hidden;
+}
+
+.gpu-accelerated {
+  will-change: transform, opacity;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+/* 2. 3D Immersive Background Layers */
+.bg-layer-deep {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bg-layer-mid {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bg-layer-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(circle at center, transparent 40%, rgba(5, 5, 8, 0.88) 100%);
+  transition: background 0.8s ease;
+}
+
+/* Dynamic Mood Lighting Glow behind panel */
+.bg-mood-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 70vw;
+  height: 70vh;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, var(--theme-accent-sampled) 0%, transparent 70%);
+  opacity: 0.18;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: -2;
+  transition: background 1s ease, opacity 0.6s ease;
+}
+
+/* 3. Panel 3D Directional Transitions */
+.panel-transition-wrapper {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.panel-3d-exit-next {
+  animation: panelExitNext 0.65s var(--expo-in) forwards;
+  transform-origin: center center;
+}
+
+.panel-3d-enter-next {
+  animation: panelEnterNext 0.70s var(--expo-out) forwards;
+  transform-origin: center center;
+}
+
+.panel-3d-exit-prev {
+  animation: panelExitPrev 0.65s var(--expo-in) forwards;
+  transform-origin: center center;
+}
+
+.panel-3d-enter-prev {
+  animation: panelEnterPrev 0.70s var(--expo-out) forwards;
+  transform-origin: center center;
+}
+
+@keyframes panelExitNext {
+  0% { transform: rotateY(0deg) translateX(0) scale(1); opacity: 1; }
+  100% { transform: rotateY(-18deg) translateX(-110%) scale(0.92); opacity: 0; }
+}
+
+@keyframes panelEnterNext {
+  0% { transform: rotateY(18deg) translateX(110%) scale(0.92); opacity: 0; }
+  100% { transform: rotateY(0deg) translateX(0) scale(1); opacity: 1; }
+}
+
+@keyframes panelExitPrev {
+  0% { transform: rotateY(0deg) translateX(0) scale(1); opacity: 1; }
+  100% { transform: rotateY(18deg) translateX(110%) scale(0.92); opacity: 0; }
+}
+
+@keyframes panelEnterPrev {
+  0% { transform: rotateY(-18deg) translateX(-110%) scale(0.92); opacity: 0; }
+  100% { transform: rotateY(0deg) translateX(0) scale(1); opacity: 1; }
+}
+
+/* Paper Curl Sweep Overlay */
+.paper-curl-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.15) 50%, rgba(0, 0, 0, 0.3) 60%, transparent 70%);
+}
+
+.paper-curl-sweep {
+  animation: curlSweep 0.65s ease-in-out forwards;
+}
+
+@keyframes curlSweep {
+  0% { transform: translateX(100%) skewX(-12deg); opacity: 0.8; }
+  100% { transform: translateX(-100%) skewX(-12deg); opacity: 0; }
+}
+
+/* 4. Glowing Progress Line */
+.glow-progress-fill {
+  box-shadow: 0 0 12px var(--theme-accent-sampled), 0 0 4px var(--theme-accent-sampled);
+  transition: width 0.6s var(--expo-out), background-color 0.8s ease;
+}
+
+/* 5. Slot Machine Page Counter */
+.slot-counter-box {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Courier New', Courier, monospace, var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  height: 1.4em;
+  line-height: 1.4em;
+  position: relative;
+  vertical-align: middle;
+}
+
+.slot-counter-num {
+  display: inline-block;
+  transition: transform 0.45s var(--expo-out), opacity 0.45s ease;
+  will-change: transform, opacity;
+}
+
+.slot-num-up-out {
+  transform: translateY(-120%);
+  opacity: 0;
+}
+
+.slot-num-up-in {
+  animation: slotSlideUpIn 0.45s var(--expo-out) forwards;
+}
+
+@keyframes slotSlideUpIn {
+  0% { transform: translateY(120%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* 6. Edge Hover Pulsing Chevrons */
+.edge-chevron-zone {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 12vw;
+  max-width: 140px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.edge-chevron-left { left: 0; }
+.edge-chevron-right { right: 0; }
+
+.edge-chevron-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(15, 15, 24, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  color: var(--text-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 16px var(--theme-accent-sampled);
+  animation: chevronPulse 2s ease-in-out infinite;
+}
+
+@keyframes chevronPulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.12); opacity: 1; }
+}
+
+.edge-chevron-zone.visible {
+  opacity: 1;
+}
+
+/* 7. Skeleton Shimmer Placeholder */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(20,20,30,0.8) 0%, rgba(40,40,60,0.9) 50%, rgba(20,20,30,0.8) 100%);
+  background-size: 200% 100%;
+  animation: shimmerMove 1.8s ease-in-out infinite;
+}
+
+@keyframes shimmerMove {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* 8. Reduced Motion Accessibility Override */
+@media (prefers-reduced-motion: reduce) {
+  .panel-3d-exit-next,
+  .panel-3d-enter-next,
+  .panel-3d-exit-prev,
+  .panel-3d-enter-prev {
+    animation: simpleCrossfade 0.25s linear forwards !important;
+  }
+
+  @keyframes simpleCrossfade {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  .paper-curl-overlay,
+  .bg-layer-deep,
+  .bg-layer-mid {
+    display: none !important;
+  }
+}
