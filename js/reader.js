@@ -226,7 +226,7 @@ class ImmersiveReader {
         m.visible = (pIndex === targetPanel.pageIndex);
       }
 
-      // Calculate target camera position and zoom out to reveal full panel
+      // Calculate target camera position and zoom
       const pageAspect = page.width / page.height;
       const meshW = 2 * pageAspect;
       const meshH = 2;
@@ -236,12 +236,16 @@ class ImmersiveReader {
       const targetX = mesh.position.x - meshW / 2 + (targetPanel.bounds.x + targetPanel.bounds.w / 2) * meshW;
       const targetY = mesh.position.y + meshH / 2 - (targetPanel.bounds.y + targetPanel.bounds.h / 2) * meshH;
 
-      // Subtle zoom-in boost: scaleFactor 0.84, max zoom cap 1.28
-      const zoomHeight = (1 / Math.max(0.15, targetPanel.bounds.h)) * 0.84;
-      const zoomWidth = (screenAspect / (Math.max(0.15, targetPanel.bounds.w) * pageAspect)) * 0.84;
-
-      // Subtle zoom-in cap: 1.28x provides cozy legibility while keeping full panel frame visible
-      const targetZoom = Math.min(zoomHeight, zoomWidth, 1.28);
+      let targetZoom;
+      if (targetPanel.isFullPageReveal) {
+        // Zoom out to fit 100% of full page
+        targetZoom = Math.min(screenAspect / pageAspect, 1.0) * 0.88;
+      } else {
+        // Focused zoom level on individual reading zone
+        const zoomHeight = (1 / Math.max(0.10, targetPanel.bounds.h)) * 0.88;
+        const zoomWidth = (screenAspect / (Math.max(0.10, targetPanel.bounds.w) * pageAspect)) * 0.88;
+        targetZoom = Math.min(zoomHeight, zoomWidth, 2.5);
+      }
 
       // Play subtle transition sound
       if (window.inkAudio) window.inkAudio.playPanelTransition();

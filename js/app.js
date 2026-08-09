@@ -242,6 +242,20 @@ class InkScrollApp {
   }
 
   async openChapterInReader(chapterData) {
+    // If chapter panels lack full-page reveal steps, re-generate zone sequence
+    const hasFullReveal = chapterData.panels && chapterData.panels.some(p => p.isFullPageReveal);
+    if (!hasFullReveal && window.mangaDetector && chapterData.pages) {
+      try {
+        const freshZones = await window.mangaDetector.detectChapterPanels(chapterData.pages);
+        if (freshZones && freshZones.length > 0) {
+          chapterData.panels = freshZones;
+          await window.inkStorage.saveChapter(chapterData);
+        }
+      } catch (err) {
+        console.warn('Zone generation error on open:', err);
+      }
+    }
+
     if (window.inkUIFX) {
       window.inkUIFX.transitionToReader(async () => {
         await window.immersiveReader.loadChapter(chapterData, 0);
