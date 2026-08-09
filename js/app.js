@@ -241,6 +241,7 @@ class InkScrollApp {
       if (delBtn) {
         delBtn.addEventListener('click', async (e) => {
           e.stopPropagation();
+          e.stopImmediatePropagation();
           e.preventDefault();
           if (confirm(`Delete "${ch.title}"?`)) {
             await window.inkStorage.deleteChapter(ch.id);
@@ -249,7 +250,8 @@ class InkScrollApp {
         });
       }
 
-      card.addEventListener('click', () => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.card-delete-btn')) return;
         if (fullData) this.openChapterInReader(fullData);
       });
 

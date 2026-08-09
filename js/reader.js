@@ -212,10 +212,65 @@ class ImmersiveReader {
     }
   }
 
-  navigateToPanel(index, duration = 0.6) {
+  // --- Phase 1a: Ken Burns Panel Breathing ---
+  startPanelBreathing(mesh) {
+    if (!mesh || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    this.stopPanelBreathing(mesh);
+    this.breathingTimer = setTimeout(() => {
+      if (!mesh) return;
+      gsap.to(mesh.scale, {
+        x: 1.02,
+        y: 1.02,
+        duration: 9,
+        ease: 'sine.inOut',
+        yoyo: true,
+        repeat: -1,
+        id: 'breathing'
+      });
+    }, 200);
+  }
+
+  stopPanelBreathing(mesh) {
+    if (this.breathingTimer) {
+      clearTimeout(this.breathingTimer);
+      this.breathingTimer = null;
+    }
+    if (mesh) {
+      gsap.killTweensOf(mesh.scale);
+      mesh.scale.set(1, 1, 1);
+    }
+  }
+
+  // --- Phase 1b: Speed-Panel Time Compression (Pacing by Panel Size) ---
+  getTransitionDuration(panel) {
+    if (!panel || !panel.bounds) return { duration: 0.35, ease: 'power2.out' };
+    const areaRatio = panel.bounds.w * panel.bounds.h;
+    if (areaRatio < 0.08) return { duration: 0.18, ease: 'power2.out' };  // small/fast action beat
+    if (areaRatio > 0.50) return { duration: 0.55, ease: 'power3.out' };  // large/dramatic/fullbleed panel
+    return { duration: 0.35, ease: 'power2.out' };                       // standard panel
+  }
+
+  // --- Phase 1c: Focus-Pull Blur Pulse ---
+  applyFocusPull(mesh, panel) {
+    if (!mesh || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const isCloseUp = panel?.isCloseUp || (panel?.bounds && (panel.bounds.h / Math.max(0.01, panel.bounds.w) > 1.8));
+    if (!isCloseUp) return;
+
+    if (mesh.material) {
+      gsap.fromTo(mesh.material,
+        { opacity: 1 },
+        { opacity: 0.92, duration: 4, ease: 'sine.inOut', yoyo: true, repeat: -1 }
+      );
+    }
+  }
+
+  navigateToPanel(index, durationOverride = null) {
     if (index < 0 || index >= this.panels.length) return;
 
     const previousPanel = this.panels[this.currentPanelIndex];
+    const previousMesh = previousPanel ? this.pageMeshes.get(previousPanel.pageIndex) : null;
+    this.stopPanelBreathing(previousMesh);
+
     this.currentPanelIndex = index;
     const targetPanel = this.panels[index];
 
@@ -223,26 +278,30 @@ class ImmersiveReader {
     const mesh = this.pageMeshes.get(targetPanel.pageIndex);
     if (!mesh || !page) return;
 
-    // Interrupt any active in-flight GSAP tweens so fast user clicks/taps never freeze or stack!
+    // Interrupt any active in-flight GSAP tweens
     if (this.camera) gsap.killTweensOf(this.camera);
     if (this.baseCameraPos) gsap.killTweensOf(this.baseCameraPos);
+    gsap.killTweensOf(mesh.scale);
+
+    // Phase 1b: Determine pacing duration & easing
+    const pacing = this.getTransitionDuration(targetPanel);
+    const duration = durationOverride !== null ? durationOverride : pacing.duration;
+    const ease = pacing.ease;
 
     const isCrossPage = previousPanel && (previousPanel.pageIndex !== targetPanel.pageIndex);
     const curtain = document.getElementById('ink-curtain-overlay');
 
     const performCameraSwapAndPan = () => {
-      // Show only the target page, hide others
+      // Show only target page
       for (let [pIndex, m] of this.pageMeshes.entries()) {
         m.visible = (pIndex === targetPanel.pageIndex);
       }
 
-      // Page geometry in world units
       const pageAspect = page.width / page.height;
-      const meshW = 2 * pageAspect;  // world width of page mesh
-      const meshH = 2;               // world height of page mesh
+      const meshW = 2 * pageAspect;
+      const meshH = 2;
       const screenAspect = window.innerWidth / window.innerHeight;
 
-      // Zone center in world coordinates
       const zx = targetPanel.bounds.x + targetPanel.bounds.w / 2;
       const zy = targetPanel.bounds.y + targetPanel.bounds.h / 2;
       const targetX = mesh.position.x - meshW / 2 + zx * meshW;
@@ -250,39 +309,39 @@ class ImmersiveReader {
 
       let targetZoom;
       if (targetPanel.isFullPageReveal) {
-        // Zoom out to show entire page — fit height and width
-        const fitByH = 1 / meshH;        // orthographic: zoom to fit page height
-        const fitByW = screenAspect / meshW; // zoom to fit page width
-        targetZoom = Math.min(fitByH, fitByW) * 1.85; // 1.85 = tuning so page fills screen
+        const fitByH = 1 / meshH;
+        const fitByW = screenAspect / meshW;
+        targetZoom = Math.min(fitByH, fitByW) * 1.85;
       } else {
-        // Zoom in so ONLY this zone fills the visible screen area
-        // The orthographic camera half-height = 1/zoom, half-width = screenAspect/zoom
-        // We want: zone height in world = visible height, zone width in world = visible width
-        // zone height in world = bounds.h * meshH
-        // zone width  in world = bounds.w * meshW
-        // zoom = 1 / (bounds.h * meshH / 2)  from height
-        // zoom = screenAspect / (bounds.w * meshW / 2)  from width
-        // Take the larger zoom so zone fills screen without showing outside
         const zoneH = targetPanel.bounds.h * meshH;
         const zoneW = targetPanel.bounds.w * meshW;
         const zoomByH = (2 / zoneH);
         const zoomByW = (2 * screenAspect / zoneW);
-        // Use the smaller (fit the whole zone) but scale to ~85% so not too tight
         targetZoom = Math.min(zoomByH, zoomByW) * 0.92;
       }
 
-      // Play subtle transition sound
-      if (window.inkAudio) window.inkAudio.playPanelTransition();
+      if (window.inkAudio) {
+        if (isCrossPage && typeof window.inkAudio.playPageTurnFoley === 'function') {
+          window.inkAudio.playPageTurnFoley();
+        } else {
+          window.inkAudio.playPanelTransition();
+        }
+      }
 
       if (!this.baseCameraPos) this.baseCameraPos = { x: targetX, y: targetY };
 
-      // Subtle circle-to-circle transition impact shake
+      // Phase 3a: Cold open for first panel on fresh load
+      if (index === 0 && this.isColdOpen) {
+        this.isColdOpen = false;
+        mesh.material.opacity = 0;
+        gsap.to(mesh.material, { opacity: 1, duration: 1.3, ease: 'power1.inOut' });
+      }
+
       gsap.fromTo(this.camera.position,
         { z: 9.6 },
         { z: 10, duration: 0.35, ease: "power2.out" }
       );
 
-      // Smooth camera pan straight to next circle center
       gsap.to(this.baseCameraPos, {
         x: targetX,
         y: targetY,
@@ -290,15 +349,18 @@ class ImmersiveReader {
         ease: "power2.inOut"
       });
 
-      // Zoom camera
       gsap.to(this.camera, {
         zoom: targetZoom,
         duration: duration,
-        ease: "power3.out",
-        onUpdate: () => this.camera.updateProjectionMatrix()
+        ease: ease,
+        onUpdate: () => this.camera.updateProjectionMatrix(),
+        onComplete: () => {
+          // Phase 1a & 1c: Start panel breathing and focus pull after arrival
+          this.startPanelBreathing(mesh);
+          this.applyFocusPull(mesh, targetPanel);
+        }
       });
 
-      // Visual effects
       this.triggerCloudParting();
       if (window.inkUIFX && typeof window.inkUIFX.triggerDirectionalSweep === 'function') {
         window.inkUIFX.triggerDirectionalSweep();
@@ -352,7 +414,31 @@ class ImmersiveReader {
     if (this.currentPanelIndex < this.panels.length - 1) {
       this.navigateToPanel(this.currentPanelIndex + 1);
     } else {
-      // Trigger Chapter Complete Flow
+      // Phase 3b & 3c: End-of-chapter cinematic outro with cliffhanger hold
+      this.playChapterOutro();
+    }
+  }
+
+  playChapterOutro() {
+    const lastPanel = this.panels[this.currentPanelIndex];
+    const lastMesh = lastPanel ? this.pageMeshes.get(lastPanel.pageIndex) : null;
+    const isCliffhanger = lastPanel?.isCliffhanger || false;
+    const holdDelay = isCliffhanger ? 1.5 : 0;
+
+    const curtain = document.getElementById('ink-curtain-overlay');
+    if (typeof gsap !== 'undefined') {
+      const tl = gsap.timeline();
+      if (lastMesh) {
+        tl.to(lastMesh.scale, { x: 1.03, y: 1.03, duration: 1.2 + holdDelay, ease: 'sine.out' }, 0);
+      }
+      if (curtain) {
+        tl.to(curtain, { opacity: 1, duration: 0.8, ease: 'power1.in', onStart: () => curtain.classList.add('active') }, 1.0 + holdDelay);
+      }
+      tl.call(() => {
+        if (curtain) curtain.classList.remove('active');
+        this.showChapterCompleteModal();
+      });
+    } else {
       this.showChapterCompleteModal();
     }
   }

@@ -224,8 +224,42 @@
       window.immersiveReader.navigateToPanel = (index, duration) => {
         originalNavigate(index, duration);
         this.updateSlotMachineCounter(index + 1);
+        this.triggerPageFlicker();
+        this.applyMoodVignette();
         setTimeout(() => this.sampleCurrentPanelColor(), 300);
       };
+    }
+
+    // Phase 2b: Mood Vignette Intensity
+    applyMoodVignette() {
+      const vignette = document.getElementById('reader-bg-vignette') || document.getElementById('ink-vignette-overlay');
+      if (!vignette || typeof gsap === 'undefined') return;
+
+      const reader = window.immersiveReader;
+      const currentPanel = reader?.panels?.[reader.currentPanelIndex];
+      const mood = currentPanel?.effects?.atmosphere || reader?.chapter?.metadata?.mood || 'neutral';
+
+      const moodVignetteStrength = {
+        tense: 0.55,
+        dark: 0.50,
+        rain: 0.45,
+        dust: 0.35,
+        calm: 0.15,
+        neutral: 0.25
+      };
+
+      const strength = moodVignetteStrength[mood] ?? moodVignetteStrength.neutral;
+      gsap.to(vignette, { opacity: strength, duration: 1.5, ease: 'sine.inOut' });
+    }
+
+    // Phase 2c: Page-Turn Light Flicker
+    triggerPageFlicker() {
+      const overlay = document.getElementById('flicker-overlay');
+      if (!overlay || typeof gsap === 'undefined' || this.reducedMotion) return;
+
+      gsap.timeline()
+        .to(overlay, { opacity: 0.08, duration: 0.04, ease: 'none' })
+        .to(overlay, { opacity: 0, duration: 0.06, ease: 'none' });
     }
 
     triggerCinematicTransition(direction, actionCallback) {

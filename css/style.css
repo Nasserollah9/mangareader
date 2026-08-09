@@ -408,6 +408,7 @@ html, body {
   align-items: flex-end;
   justify-content: space-between;
   padding: 20px;
+  pointer-events: none;
 }
 
 .chapter-card:hover .chapter-card-overlay {

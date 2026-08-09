@@ -60,11 +60,59 @@ class InkAudioEngine {
     }
   }
 
-  stopAmbient() {
-    if (this.rainOsc) {
-      try { this.rainOsc.stop(); } catch (e) {}
-      this.rainOsc = null;
+  // Phase 4a: Ambient Crossfade between moods
+  crossfadeAmbient(nextMood = 'action') {
+    if (this.isMuted) return;
+    if (!this.audioContext) this.init();
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      this.audioContext.resume();
     }
+
+    if (this.gainNode && this.audioContext) {
+      // Fade out current gain over 1.5s
+      const now = this.audioContext.currentTime;
+      this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+      this.gainNode.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+
+      setTimeout(() => {
+        this.stopAmbient();
+        this.playAmbient(nextMood);
+      }, 1500);
+    } else {
+      this.playAmbient(nextMood);
+    }
+  }
+
+  // Phase 4b: Soft Page-Turn Paper Foley (Cross-page transitions)
+  playPageTurnFoley() {
+    if (this.isMuted || !this.audioContext) return;
+    try {
+      const bufferSize = this.audioContext.sampleRate * 0.2; // 200ms
+      const noiseBuffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+
+      const whiteNoise = this.audioContext.createBufferSource();
+      whiteNoise.buffer = noiseBuffer;
+
+      const filter = this.audioContext.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1200;
+      filter.Q.value = 1.5;
+
+      const gain = this.audioContext.createGain();
+      const now = this.audioContext.currentTime;
+      gain.gain.setValueAtTime(0.12 * this.volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+      whiteNoise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.audioContext.destination);
+
+      whiteNoise.start(now);
+    } catch (e) {}
   }
 
   // Play panel transition swoosh / impact SFX
@@ -123,7 +171,8 @@ class InkAudioEngine {
     if (this.isMuted) {
       this.stopAmbient();
     } else {
-      this.playAmbient();
+      const mood = window.immersiveReader?.chapter?.metadata?.mood || 'action';
+      this.playAmbient(mood);
     }
     return this.isMuted;
   }
