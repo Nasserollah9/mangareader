@@ -76,6 +76,15 @@ class InkStorage {
     });
   }
 
+  // Clear all stored chapters & panels from IndexedDB cache
+  async clearAllChapters() {
+    await this.db.transaction('rw', this.db.chapters, this.db.pages, this.db.panels, async () => {
+      await this.db.chapters.clear();
+      await this.db.pages.clear();
+      await this.db.panels.clear();
+    });
+  }
+
   // Export chapter as .inkscroll package (JSON package with base64 image data)
   async exportInkScroll(chapterId) {
     const fullData = await this.getChapterFull(chapterId);

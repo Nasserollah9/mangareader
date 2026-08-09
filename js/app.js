@@ -5,8 +5,9 @@ class InkScrollApp {
   }
 
   async init() {
-    // Initialize IndexedDB Storage
+    // Initialize IndexedDB Storage & clear outdated chapter cache
     await window.inkStorage.init();
+    await window.inkStorage.clearAllChapters();
 
     // Initialize Audio Context on first click
     document.body.addEventListener('click', () => {
@@ -16,7 +17,7 @@ class InkScrollApp {
     // Setup Navigation & Button Listeners
     this.bindEvents();
 
-    // Load Demo Chapter into library if empty
+    // Load Demo Chapter into library
     await window.demoChapterBuilder.ensureDemoChapterLoaded();
 
     // Load Library Grid

@@ -30,12 +30,12 @@ class DemoChapterBuilder {
       { id: 'dp_2', chapterId: chapter.id, index: 2, imageUrl: p3Url, width: 1800, height: 1200, isSpread: true }
     ];
 
-    // Pre-calculated authentic Manga RTL/TTB panels with SFX text overlays
+    // Pre-calculated authentic Manga RTL/TTB panels with SFX text overlays & Full Page Reveal steps
     const panels = [
       // Page 1 Panels
       {
         id: 'dp_p1_1', chapterId: chapter.id, pageIndex: 0, readingOrder: 0,
-        bounds: { x: 0.52, y: 0.05, w: 0.43, h: 0.42 }, type: 'panel',
+        bounds: { x: 0.52, y: 0.05, w: 0.43, h: 0.42 }, type: 'panel', isFullPageReveal: false,
         effects: { atmosphere: 'rain', shake: false },
         textElements: [
           { type: 'sfx', text: 'ザザザ', bounds: { x: 0.75, y: 0.12 }, fontStyle: 'brush' },
@@ -44,7 +44,7 @@ class DemoChapterBuilder {
       },
       {
         id: 'dp_p1_2', chapterId: chapter.id, pageIndex: 0, readingOrder: 1,
-        bounds: { x: 0.05, y: 0.05, w: 0.43, h: 0.42 }, type: 'panel',
+        bounds: { x: 0.05, y: 0.05, w: 0.43, h: 0.42 }, type: 'panel', isFullPageReveal: false,
         effects: { atmosphere: 'rain', shake: false },
         textElements: [
           { type: 'sfx', text: 'ゴゴゴ', bounds: { x: 0.25, y: 0.12 }, fontStyle: 'brush' }
@@ -52,50 +52,65 @@ class DemoChapterBuilder {
       },
       {
         id: 'dp_p1_3', chapterId: chapter.id, pageIndex: 0, readingOrder: 2,
-        bounds: { x: 0.05, y: 0.52, w: 0.90, h: 0.43 }, type: 'spread',
+        bounds: { x: 0.05, y: 0.52, w: 0.90, h: 0.43 }, type: 'spread', isFullPageReveal: false,
         effects: { atmosphere: 'rain', shake: true },
         textElements: [
           { type: 'sfx', text: 'ドドン', bounds: { x: 0.45, y: 0.60 }, fontStyle: 'brush' },
           { type: 'dialogue', text: 'Who goes there?! Show yourself!', bounds: { x: 0.15, y: 0.75 }, fontStyle: 'serif' }
         ]
       },
+      {
+        id: 'dp_p1_fullreveal', chapterId: chapter.id, pageIndex: 0, readingOrder: 3,
+        bounds: { x: 0, y: 0, w: 1, h: 1 }, type: 'fullbleed', isFullPageReveal: true,
+        effects: { atmosphere: 'rain', shake: false }
+      },
 
       // Page 2 Panels
       {
-        id: 'dp_p2_1', chapterId: chapter.id, pageIndex: 1, readingOrder: 3,
-        bounds: { x: 0.50, y: 0.05, w: 0.45, h: 0.43 }, type: 'panel',
+        id: 'dp_p2_1', chapterId: chapter.id, pageIndex: 1, readingOrder: 4,
+        bounds: { x: 0.50, y: 0.05, w: 0.45, h: 0.43 }, type: 'panel', isFullPageReveal: false,
         effects: { atmosphere: 'rain', shake: false },
         textElements: [
           { type: 'dialogue', text: 'My blade seeks no innocent souls...', bounds: { x: 0.55, y: 0.15 }, fontStyle: 'serif' }
         ]
       },
       {
-        id: 'dp_p2_2', chapterId: chapter.id, pageIndex: 1, readingOrder: 4,
-        bounds: { x: 0.05, y: 0.05, w: 0.42, h: 0.43 }, type: 'panel',
+        id: 'dp_p2_2', chapterId: chapter.id, pageIndex: 1, readingOrder: 5,
+        bounds: { x: 0.05, y: 0.05, w: 0.42, h: 0.43 }, type: 'panel', isFullPageReveal: false,
         effects: { atmosphere: 'rain', shake: false },
         textElements: [
           { type: 'sfx', text: 'キィン', bounds: { x: 0.20, y: 0.20 }, fontStyle: 'brush' }
         ]
       },
       {
-        id: 'dp_p2_3', chapterId: chapter.id, pageIndex: 1, readingOrder: 5,
-        bounds: { x: 0.05, y: 0.52, w: 0.90, h: 0.43 }, type: 'spread',
+        id: 'dp_p2_3', chapterId: chapter.id, pageIndex: 1, readingOrder: 6,
+        bounds: { x: 0.05, y: 0.52, w: 0.90, h: 0.43 }, type: 'spread', isFullPageReveal: false,
         effects: { atmosphere: 'rain', shake: true },
         textElements: [
           { type: 'sfx', text: 'ズバッ', bounds: { x: 0.50, y: 0.65 }, fontStyle: 'brush' },
           { type: 'dialogue', text: 'SUMI-E INK SLASH!', bounds: { x: 0.20, y: 0.78 }, fontStyle: 'serif' }
         ]
       },
+      {
+        id: 'dp_p2_fullreveal', chapterId: chapter.id, pageIndex: 1, readingOrder: 7,
+        bounds: { x: 0, y: 0, w: 1, h: 1 }, type: 'fullbleed', isFullPageReveal: true,
+        effects: { atmosphere: 'rain', shake: false }
+      },
 
       // Page 3 Panel (Double-Page Spread)
       {
-        id: 'dp_p3_1', chapterId: chapter.id, pageIndex: 2, readingOrder: 6,
-        bounds: { x: 0.02, y: 0.02, w: 0.96, h: 0.96 }, type: 'fullbleed',
+        id: 'dp_p3_1', chapterId: chapter.id, pageIndex: 2, readingOrder: 8,
+        bounds: { x: 0.02, y: 0.02, w: 0.96, h: 0.96 }, type: 'fullbleed', isFullPageReveal: false,
         effects: { atmosphere: 'dramatic', shake: true },
         textElements: [
           { type: 'sfx', text: '勝 負 決 着', bounds: { x: 0.82, y: 0.15 }, fontStyle: 'brush' },
           { type: 'dialogue', text: 'Silence returns to the bamboo grove...', bounds: { x: 0.35, y: 0.82 }, fontStyle: 'serif' }
         ]
+      },
+      {
+        id: 'dp_p3_fullreveal', chapterId: chapter.id, pageIndex: 2, readingOrder: 9,
+        bounds: { x: 0, y: 0, w: 1, h: 1 }, type: 'fullbleed', isFullPageReveal: true,
+        effects: { atmosphere: 'dramatic', shake: false }
       }
     ];
 
