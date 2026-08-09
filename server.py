@@ -194,10 +194,14 @@ class InkScrollHandler(http.server.SimpleHTTPRequestHandler):
             og_img = re.search(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']', html, re.IGNORECASE)
         cover_url = og_img.group(1).strip() if og_img else ''
 
-        # Handle WeebCentral / Generic HTMX full-chapter-list sub-endpoint
+        # Automatically detect and fetch HTMX "Show All Chapters" / full-chapter-list endpoints
         series_html = html
-        if 'weebcentral.com' in url or '/series/' in url:
-            # Extract series ID if available or construct sub_url
+        
+        # 1. Look for explicit hx-get attribute pointing to chapter list (e.g. hx-get=".../full-chapter-list")
+        hx_get_match = re.search(r'hx-get=["\']([^"\']*(?:full-chapter-list|chapter-list|all-chapters)[^"\']*)["\']', html, re.IGNORECASE)
+        sub_url = hx_get_match.group(1).strip() if hx_get_match else None
+
+        if not sub_url and ('weebcentral.com' in url or '/series/' in url):
             series_id_match = re.search(r'/series/([^/]+)', url)
             if series_id_match:
                 s_id = series_id_match.group(1)
@@ -206,11 +210,16 @@ class InkScrollHandler(http.server.SimpleHTTPRequestHandler):
             else:
                 sub_url = url.rstrip('/') + '/full-chapter-list'
 
+        if sub_url:
+            if sub_url.startswith('/'):
+                parsed_base = urllib.parse.urlparse(url)
+                sub_url = f"{parsed_base.scheme}://{parsed_base.netloc}{sub_url}"
+
             try:
                 sub_req = urllib.request.Request(sub_url, headers=headers)
                 with urllib.request.urlopen(sub_req, timeout=15) as sub_resp:
                     sub_html = sub_resp.read().decode('utf-8', errors='ignore')
-                    if '/chapters/' in sub_html:
+                    if '/chapters/' in sub_html or 'href=' in sub_html:
                         series_html = sub_html
             except Exception as e:
                 pass
