@@ -455,19 +455,26 @@ html, body {
   position: absolute;
   top: 12px;
   left: 12px;
-  background: rgba(220, 38, 38, 0.85);
+  background: rgba(220, 38, 38, 0.90);
   border: 1px solid var(--accent-crimson);
   color: #fff;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 3;
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  z-index: 100 !important;
+  pointer-events: auto !important;
+  opacity: 0.85;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.card-delete-btn:hover {
+  background: #ef4444;
+  transform: scale(1.1);
+  opacity: 1 !important;
 }
 
 .chapter-card:hover .card-delete-btn {

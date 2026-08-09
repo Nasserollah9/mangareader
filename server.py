@@ -43,6 +43,11 @@ class InkScrollHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_error(502, f"Proxy failed: {str(e)}")
             return
 
+        # SPA route fallback for /main, /library, /reader, etc.
+        relative_path = path.lstrip('/')
+        if relative_path and not os.path.exists(os.path.join(os.getcwd(), relative_path)) and not path.startswith('/api/'):
+            self.path = '/index.html'
+
         # Fallback to standard static file serving
         super().do_GET()
 

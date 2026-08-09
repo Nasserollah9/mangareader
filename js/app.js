@@ -414,15 +414,47 @@ class InkScrollApp {
   }
 
   showView(viewName) {
-    document.querySelectorAll('.view-screen').forEach(el => el.classList.remove('active'));
-    if (viewName === 'library') {
-      document.getElementById('view-library')?.classList.add('active');
-      // Ensure reader chapter-complete modal is closed when going back to library
-      document.getElementById('modal-chapter-complete')?.classList.remove('active');
+    const libView = document.getElementById('view-library');
+    const rdrView = document.getElementById('view-reader');
+    const modalComplete = document.getElementById('modal-chapter-complete');
+
+    if (modalComplete) modalComplete.classList.remove('active');
+
+    if (viewName === 'library' || viewName === 'main') {
+      if (rdrView) {
+        rdrView.classList.remove('active');
+        rdrView.classList.add('hidden');
+        rdrView.style.display = 'none';
+        rdrView.style.opacity = '0';
+      }
+      if (libView) {
+        libView.classList.remove('hidden');
+        libView.classList.add('active');
+        libView.style.display = 'flex';
+        libView.style.opacity = '1';
+        libView.style.transform = 'none';
+      }
+      if (window.inkUIFX) {
+        window.inkUIFX.startCanvases();
+      }
+      this.loadLibraryGrid();
+      this.currentView = 'library';
     } else if (viewName === 'reader') {
-      document.getElementById('view-reader')?.classList.add('active');
+      if (libView) {
+        libView.classList.remove('active');
+        libView.classList.add('hidden');
+        libView.style.display = 'none';
+        libView.style.opacity = '0';
+      }
+      if (rdrView) {
+        rdrView.classList.remove('hidden');
+        rdrView.classList.add('active');
+        rdrView.style.display = 'flex';
+        rdrView.style.opacity = '1';
+        rdrView.style.transform = 'none';
+      }
+      this.currentView = 'reader';
     }
-    this.currentView = viewName;
   }
 
   toggleFullscreen() {
@@ -441,4 +473,25 @@ class InkScrollApp {
 window.addEventListener('DOMContentLoaded', () => {
   window.app = new InkScrollApp();
   window.app.init();
+
+  // Route listener for browser Back/Forward navigation
+  window.addEventListener('popstate', () => {
+    const hash = window.location.hash;
+    if (hash === '#reader' && window.immersiveReader && window.immersiveReader.chapter) {
+      window.app.showView('reader');
+    } else {
+      if (window.immersiveReader) window.immersiveReader.exitReader();
+      window.app.showView('library');
+    }
+  });
+
+  window.addEventListener('hashchange', () => {
+    const hash = window.location.hash;
+    if (hash === '#reader' && window.immersiveReader && window.immersiveReader.chapter) {
+      window.app.showView('reader');
+    } else {
+      if (window.immersiveReader) window.immersiveReader.exitReader();
+      window.app.showView('library');
+    }
+  });
 });
