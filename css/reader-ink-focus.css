@@ -1,0 +1,218 @@
+/* ==========================================================================
+   InkScroll "Ink & Focus" Design System — Calm, Reading-First Visual Layer
+   ========================================================================== */
+
+:root {
+  --ink-bg-dark: #0a0a0c;
+  --ink-ambient-color: rgba(35, 35, 50, 0.4);
+  --ink-ease-gentle: cubic-bezier(0.25, 0.1, 0.25, 1.0);
+}
+
+/* 1. Base Stage & Washi Noise Pulp Texture */
+.ink-focus-stage {
+  background-color: var(--ink-bg-dark) !important;
+  position: relative;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+/* SVG Paper Pulp Grain Texture (2% Opacity to prevent banding) */
+.ink-focus-stage::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* 2. Inkwell Ambient Glow Layer (z-index: -1) */
+.ink-ambient-orb {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 75vw;
+  height: 75vh;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at center, var(--ink-ambient-color) 0%, transparent 70%);
+  filter: blur(80px);
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 1;
+  transition: background 2s ease;
+  animation: ambientDrift 20s ease-in-out infinite alternate;
+}
+
+@keyframes ambientDrift {
+  0% { transform: translate(-52%, -52%); }
+  100% { transform: translate(-48%, -48%); }
+}
+
+/* 3. Vignette Overlay (z-index: 2) */
+.ink-vignette-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.6) 100%);
+}
+
+/* 4. Manga Panel Framing & MA (Negative Space Breathing Room) */
+.ink-panel-frame {
+  max-height: 80vh;
+  margin: 0 auto;
+  border-radius: 4px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  transition: transform 0.4s var(--ink-ease-gentle);
+  position: relative;
+  z-index: 3;
+}
+
+/* 5. Gentle Horizontal Slide & Crossfade Transitions */
+.ink-slide-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ink-panel-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+.ink-exit-next {
+  animation: slideExitNext 0.42s var(--ink-ease-gentle) forwards;
+  z-index: 1;
+}
+
+.ink-enter-next {
+  animation: slideEnterNext 0.42s var(--ink-ease-gentle) forwards;
+  z-index: 2;
+}
+
+.ink-exit-prev {
+  animation: slideExitPrev 0.42s var(--ink-ease-gentle) forwards;
+  z-index: 1;
+}
+
+.ink-enter-prev {
+  animation: slideEnterPrev 0.42s var(--ink-ease-gentle) forwards;
+  z-index: 2;
+}
+
+@keyframes slideExitNext {
+  0% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(-30%); opacity: 0; }
+}
+
+@keyframes slideEnterNext {
+  0% { transform: translateX(30%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideExitPrev {
+  0% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(30%); opacity: 0; }
+}
+
+@keyframes slideEnterPrev {
+  0% { transform: translateX(-30%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* 6. Focus Mode (Auto-Hide Recessive UI Chrome) */
+.ink-recessive-ui {
+  transition: opacity 0.3s ease;
+  will-change: opacity;
+}
+
+.ink-recessive-ui.focus-receded {
+  opacity: 0.05 !important;
+  pointer-events: none;
+}
+
+/* 7. Minimalist 2px Bottom Progress Line */
+.ink-minimal-progress-track {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  z-index: 30;
+  pointer-events: none;
+}
+
+.ink-minimal-progress-fill {
+  height: 100%;
+  width: 0%;
+  background-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.15);
+  transition: width 0.5s var(--ink-ease-gentle);
+}
+
+/* 8. Quiet Navigation Hints (Desktop) */
+.ink-hint-chevron {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  color: rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ink-hint-left { left: 1.5vw; }
+.ink-hint-right { right: 1.5vw; }
+
+.ink-hint-chevron.hint-visible {
+  opacity: 0.15;
+}
+
+/* 9. Breathing Skeleton Loader */
+.ink-breathing-loader {
+  background-color: #111116;
+  animation: breathingPulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes breathingPulse {
+  0% { opacity: 0.5; }
+  100% { opacity: 1.0; }
+}
+
+/* 10. Page Counter Crossfade */
+.ink-counter-crossfade {
+  transition: opacity 0.2s ease;
+}
+
+/* 11. Reduced Motion Safety Override */
+@media (prefers-reduced-motion: reduce) {
+  .ink-exit-next,
+  .ink-enter-next,
+  .ink-exit-prev,
+  .ink-enter-prev {
+    animation: gentleFade 0.15s linear forwards !important;
+  }
+
+  @keyframes gentleFade {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  .ink-ambient-orb {
+    animation: none !important;
+  }
+}
