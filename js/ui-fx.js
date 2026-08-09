@@ -323,8 +323,11 @@ class InkUIFX {
           document.getElementById('view-library').classList.remove('active');
           
           const readerView = document.getElementById('view-reader');
-          readerView.classList.remove('hidden');
-          readerView.classList.add('active');
+          if (readerView) {
+            readerView.classList.remove('hidden');
+            readerView.classList.add('active');
+            readerView.style.display = 'flex';
+          }
 
           gsap.fromTo('#view-reader',
             { opacity: 0, y: 30 },
@@ -333,8 +336,10 @@ class InkUIFX {
         }
       });
     } else {
-      document.getElementById('view-library').classList.add('hidden');
-      document.getElementById('view-reader').classList.remove('hidden');
+      const lib = document.getElementById('view-library');
+      const rdr = document.getElementById('view-reader');
+      if (lib) { lib.classList.add('hidden'); lib.style.display = 'none'; }
+      if (rdr) { rdr.classList.remove('hidden'); rdr.classList.add('active'); rdr.style.display = 'flex'; rdr.style.opacity = '1'; }
       if (onComplete) onComplete();
     }
   }
