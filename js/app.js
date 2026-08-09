@@ -192,8 +192,19 @@ class InkScrollApp {
     const grid = document.getElementById('chapter-grid');
     if (!grid) return;
 
-    grid.innerHTML = '';
+    // Show loading state
+    grid.innerHTML = '<div style="color:#666;text-align:center;padding:40px;width:100%">Loading library...</div>';
+
+    // Ensure demo chapter always exists
+    await window.demoChapterBuilder.ensureDemoChapterLoaded();
+
     const chapters = await window.inkStorage.getAllChapters();
+    grid.innerHTML = '';
+
+    if (chapters.length === 0) {
+      grid.innerHTML = '<div style="color:#666;text-align:center;padding:40px;width:100%">No chapters found. Import a chapter above!</div>';
+      return;
+    }
 
     for (let ch of chapters) {
       const card = document.createElement('div');
@@ -217,7 +228,7 @@ class InkScrollApp {
             <div class="card-title">${ch.title}</div>
             <div class="card-meta">
               <span>${fullData?.pages.length || 0} Pages</span>
-              <span>${fullData?.panels.length || 0} Panels</span>
+              <span>${fullData?.panels.length || 0} Zones</span>
             </div>
             <div class="progress-bar-bg">
               <div class="progress-bar-fill" style="width: ${ch.progress || 0}%"></div>
@@ -233,11 +244,6 @@ class InkScrollApp {
           e.preventDefault();
           if (confirm(`Delete "${ch.title}"?`)) {
             await window.inkStorage.deleteChapter(ch.id);
-            // Always ensure demo chapter exists after deletion
-            const remaining = await window.inkStorage.getAllChapters();
-            if (remaining.length === 0) {
-              await window.demoChapterBuilder.ensureDemoChapterLoaded();
-            }
             await this.loadLibraryGrid();
           }
         });

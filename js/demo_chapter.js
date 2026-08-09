@@ -3,8 +3,11 @@ class DemoChapterBuilder {
 
   // Create or load the pre-packaged sumi-e demo chapter
   async ensureDemoChapterLoaded() {
-    // Always regenerate to ensure fresh 12-zone reading grid
-    await window.inkStorage.clearAllChapters();
+    // Only create demo if it doesn't exist yet — never wipe other chapters
+    const existing = await window.inkStorage.getChapterFull('demo_blade_of_ink');
+    if (existing && existing.panels && existing.panels.length > 0) {
+      return existing;
+    }
 
     // Procedurally render high-resolution sumi-e manga pages onto canvas
     const p1Url = this.generateSumiPage1();
