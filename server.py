@@ -194,38 +194,55 @@ class InkScrollHandler(http.server.SimpleHTTPRequestHandler):
             og_img = re.search(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']', html, re.IGNORECASE)
         cover_url = og_img.group(1).strip() if og_img else ''
 
-        # Automatically detect and fetch HTMX "Show All Chapters" / full-chapter-list endpoints
+        # Automatically detect and fetch HTMX / Madara wp-manga full chapter endpoints
         series_html = html
         
-        # 1. Look for explicit hx-get attribute pointing to chapter list (e.g. hx-get=".../full-chapter-list")
-        hx_get_match = re.search(r'hx-get=["\']([^"\']*(?:full-chapter-list|chapter-list|all-chapters)[^"\']*)["\']', html, re.IGNORECASE)
-        sub_url = hx_get_match.group(1).strip() if hx_get_match else None
-
-        if not sub_url and ('weebcentral.com' in url or '/series/' in url):
-            series_id_match = re.search(r'/series/([^/]+)', url)
-            if series_id_match:
-                s_id = series_id_match.group(1)
-                parsed_base = urllib.parse.urlparse(url)
-                sub_url = f"{parsed_base.scheme}://{parsed_base.netloc}/series/{s_id}/full-chapter-list"
-            else:
-                sub_url = url.rstrip('/') + '/full-chapter-list'
-
-        if sub_url:
-            if sub_url.startswith('/'):
-                parsed_base = urllib.parse.urlparse(url)
-                sub_url = f"{parsed_base.scheme}://{parsed_base.netloc}{sub_url}"
-
+        # 1. Check Madara / wp-manga theme pattern (e.g. 3asq.online/manga/manga-name/ajax/chapters/)
+        if 'ajax/chapters' not in url:
+            ajax_chapters_url = url.rstrip('/') + '/ajax/chapters/'
             try:
-                sub_req = urllib.request.Request(sub_url, headers=headers)
-                with urllib.request.urlopen(sub_req, timeout=15) as sub_resp:
-                    sub_html = sub_resp.read().decode('utf-8', errors='ignore')
-                    if '/chapters/' in sub_html or 'href=' in sub_html:
-                        series_html = sub_html
+                ajax_headers = dict(headers)
+                ajax_headers['X-Requested-With'] = 'XMLHttpRequest'
+                ajax_req = urllib.request.Request(ajax_chapters_url, method='POST', headers=ajax_headers)
+                with urllib.request.urlopen(ajax_req, timeout=15) as ajax_resp:
+                    ajax_html = ajax_resp.read().decode('utf-8', errors='ignore')
+                    if 'wp-manga-chapter' in ajax_html or 'href=' in ajax_html:
+                        series_html = ajax_html
             except Exception as e:
                 pass
 
-        # Extract chapter links & titles
-        ch_matches = re.findall(r'<a[^>]+href=["\']([^"\']*/chapters/[^"\']+)["\'][^>]*>(.*?)</a>', series_html, re.IGNORECASE | re.DOTALL)
+        # 2. If series_html is still unchanged, check hx-get attribute
+        if series_html == html:
+            hx_get_match = re.search(r'hx-get=["\']([^"\']*(?:full-chapter-list|chapter-list|all-chapters)[^"\']*)["\']', html, re.IGNORECASE)
+            sub_url = hx_get_match.group(1).strip() if hx_get_match else None
+
+            if not sub_url and ('weebcentral.com' in url or '/series/' in url):
+                series_id_match = re.search(r'/series/([^/]+)', url)
+                if series_id_match:
+                    s_id = series_id_match.group(1)
+                    parsed_base = urllib.parse.urlparse(url)
+                    sub_url = f"{parsed_base.scheme}://{parsed_base.netloc}/series/{s_id}/full-chapter-list"
+                else:
+                    sub_url = url.rstrip('/') + '/full-chapter-list'
+
+            if sub_url:
+                if sub_url.startswith('/'):
+                    parsed_base = urllib.parse.urlparse(url)
+                    sub_url = f"{parsed_base.scheme}://{parsed_base.netloc}{sub_url}"
+
+                try:
+                    sub_req = urllib.request.Request(sub_url, headers=headers)
+                    with urllib.request.urlopen(sub_req, timeout=15) as sub_resp:
+                        sub_html = sub_resp.read().decode('utf-8', errors='ignore')
+                        if '/chapters/' in sub_html or 'href=' in sub_html:
+                            series_html = sub_html
+                except Exception as e:
+                    pass
+
+        # Extract chapter links & titles across all supported sites (WeebCentral, 3asq, etc.)
+        ch_matches = re.findall(r'<a[^>]+href=["\']([^"\']*(?:/chapters/|/manga/[^"\']+/[0-9]+)[^"\']*)["\'][^>]*>(.*?)</a>', series_html, re.IGNORECASE | re.DOTALL)
+        if not ch_matches:
+            ch_matches = re.findall(r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', series_html, re.IGNORECASE | re.DOTALL)
         
         parsed_base = urllib.parse.urlparse(url)
         base_domain = f"{parsed_base.scheme}://{parsed_base.netloc}"
