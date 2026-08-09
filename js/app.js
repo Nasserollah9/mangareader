@@ -53,18 +53,12 @@ class InkScrollApp {
     this.on('btn-cancel-import', 'click', () => this.closeImportModal());
     this.on('btn-submit-import', 'click', () => this.handleModalImport());
 
-    // START READING Button
-    this.on('hero-start-reading-btn', 'click', async () => {
-      const chapters = await window.inkStorage.getAllChapters();
-      if (chapters && chapters.length > 0) {
-        const latestFull = await window.inkStorage.getChapterFull(chapters[0].id);
-        if (latestFull) {
-          this.openChapterInReader(latestFull);
-          return;
-        }
+    // START READING Button -> Smooth scroll down to Compiled Chapters library section
+    this.on('hero-start-reading-btn', 'click', () => {
+      const gridHeader = document.querySelector('.library-section-header');
+      if (gridHeader) {
+        gridHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
-      const demoData = await window.inkStorage.getChapterFull('demo_blade_of_ink');
-      if (demoData) this.openChapterInReader(demoData);
     });
 
     // Hero URL Import Bar
